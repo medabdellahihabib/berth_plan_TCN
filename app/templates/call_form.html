@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} — TCN{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ title }}</h1>
+        <p>Le berth plan est recalculé dès l'enregistrement, selon les fenêtres prioritaires de chaque ligne.</p>
+    </div>
+    <a href="{% url 'home' %}" class="btn"><i class="fas fa-arrow-left"></i> Retour au plan</a>
+</div>
+
+<div class="form-layout">
+    <form method="post" class="panel form-card" id="callForm" novalidate data-line="{{ my_line|default:'' }}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {% for err in form.non_field_errors %}
+            <div class="note note-err"><i class="fas fa-ban"></i><div>{{ err }}</div></div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="form-section">
+            <h2><span class="step">1</span> Navire</h2>
+            {% if form.line %}
+            <div class="field {% if form.line.errors %}has-error{% endif %}" style="margin-bottom:1rem">
+                <label for="{{ form.line.id_for_label }}">{{ form.line.label }}</label>
+                {{ form.line }}
+                {% for e in form.line.errors %}<div class="err">{{ e }}</div>{% endfor %}
+            </div>
+            {% endif %}
+            <div class="field" style="margin-bottom:1rem">
+                <label for="{{ form.vessel.id_for_label }}">Choisir un navire de votre flotte</label>
+                {{ form.vessel }}
+                <div class="help">Ou laissez « Nouveau navire » et saisissez ses informations.</div>
+            </div>
+            <div class="grid-3">
+                {% for field in form %}{% if field.name in "name imo loa" %}
+                <div class="field {% if field.errors %}has-error{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for e in field.errors %}<div class="err">{{ e }}</div>{% endfor %}
+                </div>
+                {% endif %}{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2><span class="step">2</span> Escale</h2>
+            <div class="grid-3">
+                {% for field in form %}{% if field.name == "eta" or field.name == "etd" or field.name == "voyage" %}
+                <div class="field {% if field.errors %}has-error{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for e in field.errors %}<div class="err">{{ e }}</div>{% endfor %}
+                </div>
+                {% endif %}{% endfor %}
+            </div>
+            <div class="duration" id="durationText"></div>
+            <div class="window-check" id="windowCheck" aria-live="polite"></div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'home' %}" class="btn">Annuler</a>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <i class="fas fa-anchor"></i> {% if call %}Enregistrer les modifications{% else %}Déclarer l'escale{% endif %}
+            </button>
+        </div>
+    </form>
+
+    <aside>
+        <div class="panel side-card">
+            <h3>Fenêtres des 7 prochains jours</h3>
+            <div class="week-strip">
+                {% for d in week %}
+                <div class="wk" data-date="{{ d.date }}" style="--line:{{ d.color }}">
+                    <div class="d">{{ d.short }}</div>
+                    <div class="n">{{ d.num }}</div>
+                    <div class="o">{{ d.owner }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if working %}
+            <div class="note note-warn" style="margin:0"><i class="fas fa-anchor"></i>
+                <div><strong>{{ working.vessel.name }}</strong> est en opération au quai. Aucune escale ne peut être déclarée pendant ses opérations.</div>
+            </div>
+            {% else %}
+            <div class="note note-ok" style="margin:0"><i class="fas fa-circle-check"></i><div>Le quai est libre actuellement.</div></div>
+            {% endif %}
+        </div>
+
+
+    </aside>
+</div>
+
+{{ vessels_json|json_script:"vessels-data" }}
+{{ lines_json|json_script:"lines-data" }}
+{{ day_owner_json|json_script:"day-owner-data" }}
+{{ working_json|json_script:"working-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'berth/js/call_form.js' %}"></script>
+{% endblock %}

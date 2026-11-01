@@ -1,0 +1,1110 @@
+{% load static %}
+{# Page autonome : HTML + CSS + JS dans un seul fichier #}<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berth plan — TCN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+/* ═══ Styles intégrés (anciennement static/berth/css/app.css) ═══ */
+/* ═══════════════════════════════════════════════════════════
+   TCN Berth Plan — styles application
+   ═══════════════════════════════════════════════════════════ */
+:root {
+    --surface:     #070a12;
+    --panel:       #0e1320;
+    --panel-2:     #131a2a;
+    --panel-3:     #19223a;
+    --border:      rgba(120,160,220,0.12);
+    --border-2:    rgba(120,160,220,0.22);
+    --accent:      #f0b429;
+    --accent-2:    #3fb6e8;
+    --accent-3:    #e5533d;
+    --ok:          #2ec4a6;
+    --accent-glow: rgba(240,180,41,0.30);
+    --text:        #e8edf5;
+    --muted:       #5a6580;
+    --muted-light: #8b96ad;
+    --water-1:     #0a1628;
+    --water-2:     #071020;
+    --radius:      12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+}
+a { color: var(--accent-2); text-decoration: none; }
+a:hover { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; margin: 0; }
+
+/* ── Barre supérieure ─────────────────────────────── */
+.topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 2rem;
+    padding: 0.7rem 1.75rem;
+    background: rgba(7,10,18,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+}
+.topbar::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: linear-gradient(90deg, var(--accent-3), var(--accent) 35%, var(--accent-2));
+    opacity: .7;
+}
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); }
+.brand:hover { color: var(--text); }
+.brand-icon {
+    width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(140deg, var(--accent), #d99a12);
+    box-shadow: 0 6px 20px var(--accent-glow);
+}
+.brand-icon svg { width: 20px; height: 20px; fill: #070a12; }
+.brand-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; }
+.brand-name span { color: var(--accent); }
+
+.nav { display: flex; gap: 0.25rem; }
+.nav a {
+    color: var(--muted-light); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.9rem;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+}
+.nav a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.nav a.active { color: var(--text); background: rgba(240,180,41,0.10); box-shadow: inset 0 -2px 0 var(--accent); }
+
+.user-box { margin-left: auto; display: flex; align-items: center; gap: 0.9rem; }
+.user-chip { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; color: var(--muted-light); }
+.user-chip strong { color: var(--text); font-weight: 500; }
+.line-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 500;
+    color: var(--line, var(--accent)); background: color-mix(in srgb, var(--line, var(--accent)) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--line, var(--accent)) 40%, transparent);
+}
+.line-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line, var(--accent)); }
+.btn-logout {
+    background: none; border: 1px solid var(--border-2); color: var(--muted-light);
+    border-radius: 8px; padding: 0.4rem 0.7rem; cursor: pointer; font: inherit; font-size: 0.85rem;
+}
+.btn-logout:hover { color: var(--accent-3); border-color: var(--accent-3); }
+
+/* ── Mise en page ─────────────────────────────────── */
+.page { max-width: 1480px; margin: 0 auto; padding: 1.75rem; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.page-head h1 { font-size: 1.75rem; font-weight: 700; }
+.page-head p { margin: 0.25rem 0 0; color: var(--muted-light); }
+
+.btn {
+    display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center;
+    font: inherit; font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    border-radius: 9px; padding: 0.6rem 1rem; border: 1px solid var(--border-2);
+    background: var(--panel-2); color: var(--text); transition: background .15s, border-color .15s, transform .15s;
+}
+.btn:hover { background: var(--panel-3); color: var(--text); }
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), #d99a12); color: #070a12; border: none;
+    font-family: 'Syne', sans-serif; font-weight: 700; letter-spacing: 0.01em;
+}
+.btn-primary:hover { color: #070a12; background: linear-gradient(135deg, #f5c34a, #e0a41c); transform: translateY(-1px); box-shadow: 0 8px 26px var(--accent-glow); }
+.btn-danger { color: #f39a8c; border-color: rgba(229,83,61,.35); background: rgba(229,83,61,.08); }
+.btn-danger:hover { background: rgba(229,83,61,.18); color: #ffb4a8; }
+.btn-ok { color: #8ef0db; border-color: rgba(46,196,166,.35); background: rgba(46,196,166,.08); }
+.btn-ok:hover { background: rgba(46,196,166,.18); color: #b4fff0; }
+.btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; border-radius: 7px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.panel {
+    background: linear-gradient(170deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--border); border-radius: var(--radius);
+}
+
+/* ── Bandeau d'état du quai ───────────────────────── */
+.quay-status {
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 0; margin-bottom: 1.25rem; overflow: hidden;
+}
+.qs-cell { padding: 1rem 1.25rem; border-right: 1px solid var(--border); min-width: 0; }
+.qs-cell:last-child { border-right: none; }
+.qs-cell .k { font-size: 0.8rem; color: var(--muted-light); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 6px; }
+.qs-cell .v { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qs-cell .s { font-size: 0.82rem; color: var(--muted-light); margin-top: 0.15rem; }
+.qs-busy { background: linear-gradient(90deg, rgba(240,180,41,.10), transparent); }
+.qs-busy .v { color: var(--accent); }
+.qs-free .v { color: var(--ok); }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; } 50% { box-shadow: 0 0 0 5px transparent; opacity: .6; } }
+
+/* ── Légende des fenêtres ─────────────────────────── */
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center; font-size: 0.84rem; color: var(--muted-light); }
+.legend-item { display: inline-flex; align-items: center; gap: 0.5rem; }
+.legend-item b { color: var(--text); font-weight: 500; }
+.swatch { width: 14px; height: 14px; border-radius: 4px; background: var(--line); box-shadow: 0 0 0 3px color-mix(in srgb, var(--line) 20%, transparent); }
+
+/* ═══════════════════ BERTH PLAN ═══════════════════ */
+.plan { padding: 0; overflow: hidden; }
+.plan-toolbar {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    padding: 0.85rem 1rem; border-bottom: 1px solid var(--border);
+}
+.plan-toolbar h2 { font-size: 1.05rem; font-weight: 700; margin-right: 0.5rem; }
+.seg { display: inline-flex; border: 1px solid var(--border-2); border-radius: 9px; overflow: hidden; }
+.seg button {
+    background: transparent; border: none; color: var(--muted-light); font: inherit; font-size: 0.82rem;
+    padding: 0.4rem 0.7rem; cursor: pointer; border-right: 1px solid var(--border);
+}
+.seg button:last-child { border-right: none; }
+.seg button:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.seg button.on { background: rgba(240,180,41,0.14); color: var(--accent); }
+.plan-range { font-size: 0.88rem; color: var(--text); min-width: 11rem; }
+.toggle { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.84rem; color: var(--muted-light); cursor: pointer; user-select: none; }
+.toggle input { accent-color: var(--accent); }
+.live { margin-left: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; color: var(--ok); }
+.live.off { color: var(--accent-3); }
+
+/* Plan : quai horizontal (métrage + bollards), temps vertical */
+.bp { position: relative; }
+.bp-scroll { overflow: auto; max-height: min(78vh, 780px); position: relative; scrollbar-color: var(--panel-3) transparent; }
+.bp-grid { display: grid; position: relative; }
+.bp-corner {
+    position: sticky; top: 0; left: 0; z-index: 9; background: var(--panel-2);
+    border-right: 1px solid var(--border-2); border-bottom: 1px solid var(--border-2);
+    display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 0 .75rem;
+    font-size: .72rem; color: var(--muted-light);
+}
+.bp-corner b { color: var(--text); font-weight: 500; }
+.bp-ruler {
+    position: sticky; top: 0; z-index: 7; overflow: hidden;
+    background: linear-gradient(180deg, #151d30, #0f1524); border-bottom: 1px solid var(--border-2);
+}
+.bp-ruler-title { position: absolute; left: 14px; top: 8px; font-size: .74rem; color: var(--muted-light); white-space: nowrap; }
+.bp-ruler-title i { color: var(--accent); margin-right: 4px; }
+.bp-quay-wall {
+    position: absolute; bottom: 0; height: 16px;
+    background: repeating-linear-gradient(90deg, #2a3652 0 2px, #222c44 2px 14px);
+    border-top: 2px solid #f0b42966;
+}
+.bp-mtick { position: absolute; top: 30px; bottom: 16px; border-left: 1px solid rgba(139,150,173,.45); }
+.bp-mtick span { position: absolute; top: -2px; left: 4px; font-size: .68rem; color: var(--text); white-space: nowrap; }
+.bp-mtick.end span { left: auto; right: 4px; }
+.bp-bollard { position: absolute; bottom: 2px; transform: translateX(-50%); display: flex; flex-direction: column-reverse; align-items: center; }
+.bp-bollard i { display: block; width: 8px; height: 10px; border-radius: 3px 3px 1px 1px; background: #f0b429; box-shadow: 0 0 0 1.5px #070a12; }
+.bp-bollard span { position: absolute; bottom: 13px; font-size: .6rem; color: #f6d17a; white-space: nowrap; }
+
+.bp-timeaxis { position: sticky; left: 0; z-index: 6; background: var(--panel); border-right: 1px solid var(--border-2); }
+.bp-dayaxis { position: absolute; left: 0; right: 0; border-bottom: 1px solid var(--border-2); box-shadow: inset 3px 0 0 var(--line); }
+.bp-dayaxis.is-today { background: rgba(240,180,41,.06); }
+.bp-dayaxis-label { position: sticky; top: 78px; z-index: 1; margin-left: 3px; padding: .45rem .6rem .45rem .7rem; display: flex; flex-direction: column; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.bp-dayaxis.is-today .bp-dayaxis-label { background: #15192a; }
+.bp-dayaxis-label b { font-size: .84rem; font-weight: 500; color: var(--text); }
+.bp-dayaxis-label span { font-size: .7rem; color: var(--line); display: flex; align-items: center; gap: 5px; }
+.bp-dayaxis-label span i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.bp-htick { position: absolute; right: 8px; transform: translateY(-50%); font-size: .66rem; color: var(--muted); }
+.bp-now-tag {
+    position: absolute; right: 4px; transform: translateY(-50%); z-index: 2;
+    background: var(--accent-3); color: #fff; font-size: .68rem; font-weight: 500; padding: 1px 6px; border-radius: 4px;
+}
+
+.bp-canvas {
+    position: relative; overflow: hidden;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 26px, rgba(63,182,232,.03) 26px 27px),
+        linear-gradient(90deg, var(--water-1), var(--water-2));
+}
+.bp-window { position: absolute; left: 0; right: 0; border-bottom: 1px solid rgba(120,160,220,.16);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--line) 8%, transparent), color-mix(in srgb, var(--line) 3%, transparent)); }
+.bp-window-tag {
+    position: absolute; right: 12px; top: 6px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem;
+    color: var(--line); opacity: .14; pointer-events: none; letter-spacing: -.03em;
+}
+.bp-hline { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(120,160,220,.07); }
+.bp-bline { position: absolute; top: 0; bottom: 0; border-left: 1px dotted rgba(240,180,41,.12); }
+.bp-quayzone { position: absolute; top: 0; bottom: 0; border-left: 1px solid rgba(240,180,41,.35); border-right: 1px solid rgba(240,180,41,.35); pointer-events: none; }
+
+.bp-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--accent-3); z-index: 8; box-shadow: 0 0 12px rgba(229,83,61,.6); pointer-events: none; }
+
+/* Fantôme : ETA demandé quand le navire a été décalé */
+.bp-ghost {
+    position: absolute; border: 1.5px dashed color-mix(in srgb, var(--line) 70%, transparent); border-radius: 8px;
+    background: color-mix(in srgb, var(--line) 5%, transparent); z-index: 2; padding: 4px 8px; font-size: .7rem; color: var(--muted-light); overflow: hidden;
+}
+.bp-shift { position: absolute; width: 0; border-left: 1.5px dashed var(--accent); z-index: 3; }
+.bp-shift::after {
+    content: ''; position: absolute; bottom: -1px; left: -6px;
+    border-top: 8px solid var(--accent); border-left: 5px solid transparent; border-right: 5px solid transparent;
+}
+.bp-shift span {
+    position: absolute; top: 50%; left: 6px; transform: translateY(-50%); font-size: .68rem; color: var(--accent);
+    background: var(--water-1); padding: 0 5px; white-space: nowrap; border-radius: 4px;
+}
+
+/* Navire */
+.bp-vessel { position: absolute; z-index: 4; cursor: pointer; transition: transform .18s, filter .18s; }
+.bp-vessel:hover, .bp-vessel:focus-visible { filter: drop-shadow(0 8px 20px color-mix(in srgb, var(--line) 45%, transparent)); z-index: 7; }
+.bp-occ {
+    position: absolute; inset: 0; border-radius: 6px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--line) 22%, transparent), color-mix(in srgb, var(--line) 8%, transparent));
+    border: 1px solid color-mix(in srgb, var(--line) 55%, transparent); border-top-width: 2px;
+}
+.bp-ship { position: relative; display: block; overflow: visible; }
+.bp-label {
+    position: absolute; left: 13%; right: 16%; display: flex; flex-direction: column; justify-content: center;
+    overflow: hidden; pointer-events: none; line-height: 1.25; text-shadow: 0 1px 2px rgba(0,0,0,.7);
+}
+.bp-label b { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .8rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-label span { font-size: .68rem; color: #d6deee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-info {
+    position: absolute; left: 8px; right: 8px; display: flex; flex-direction: column; gap: 2px;
+    font-size: .7rem; color: #c9d4ea; overflow: hidden; pointer-events: none;
+}
+.bp-info b { font-family: 'Syne', sans-serif; font-size: .78rem; color: #fff; }
+.bp-info span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-info i { color: var(--line); width: 12px; }
+.bp-badges { position: absolute; right: 4px; top: 3px; display: flex; gap: 4px; pointer-events: none; z-index: 2; }
+.bp-badge { font-size: .62rem; font-weight: 500; padding: 1px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+.bp-badge.prio { background: var(--line); color: #070a12; }
+.bp-badge.working { background: var(--accent); color: #070a12; }
+.bp-badge.mine { background: rgba(7,10,18,.75); color: var(--text); border: 1px solid rgba(255,255,255,.25); }
+.bp-vessel.is-working .bp-occ { box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(240,180,41,.25); }
+.bp-vessel.is-working .bp-mast-light { animation: blink 1.2s steps(2) infinite; }
+.bp-vessel.is-completed { opacity: .42; filter: grayscale(.7); }
+.bp-vessel.is-dimmed { opacity: .2; }
+.bp-vessel.is-focus { animation: focusFlash 1.4s ease-out 2; }
+@keyframes blink { 50% { opacity: .15; } }
+.bp-trolley { animation: bpTrolley 6s ease-in-out infinite; }
+.bp-hoist   { animation: bpHoist 6s ease-in-out infinite; }
+@keyframes bpTrolley { 0%, 15% { transform: translateX(0); } 45%, 65% { transform: translateX(26px); } 95%, 100% { transform: translateX(0); } }
+@keyframes bpHoist   { 0%, 10% { transform: translateY(8px); } 25%, 70% { transform: translateY(0); } 85%, 100% { transform: translateY(8px); } }
+.bp-vessel:hover .bp-ship, .bp-vessel:focus-visible .bp-ship { filter: brightness(1.12); }
+@keyframes focusFlash { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 40% { filter: drop-shadow(0 0 16px var(--accent)); } 100% { filter: none; } }
+
+.bp-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted-light); font-size: .9rem; pointer-events: none; z-index: 1; }
+.bp-empty div { background: rgba(7,10,18,.7); border: 1px solid var(--border); padding: .6rem 1rem; border-radius: 8px; }
+
+.bp-tooltip {
+    position: fixed; z-index: 80; pointer-events: none; display: none; max-width: 300px;
+    background: rgba(14,19,32,.97); border: 1px solid var(--border-2); border-left: 3px solid var(--line, var(--accent));
+    border-radius: 8px; padding: .65rem .8rem; font-size: 0.8rem; box-shadow: 0 16px 40px rgba(0,0,0,.5);
+}
+.bp-tooltip h4 { margin: 0 0 .3rem; font-family: 'Syne', sans-serif; font-size: .92rem; }
+.bp-tooltip dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.bp-tooltip dt { color: var(--muted-light); }
+.bp-tooltip dd { margin: 0; }
+.bp-tooltip .warn { margin-top: .4rem; color: var(--accent); }
+
+/* Tiroir de détail */
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(3,5,10,.55); z-index: 105; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); z-index: 110;
+    background: var(--panel); border-left: 1px solid var(--border-2); transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column;
+}
+.drawer.open { transform: none; }
+.drawer.open + .drawer-backdrop, .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+.drawer-head { padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid var(--border); position: relative; }
+.drawer-head::before { content: ''; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: var(--line, var(--accent)); }
+.drawer-head h3 { font-size: 1.3rem; padding-right: 2rem; }
+.drawer-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted-light); font-size: 1.1rem; cursor: pointer; }
+.drawer-ship { margin: 1rem 0 0; }
+.drawer-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem 1rem; margin: 0 0 1.25rem; }
+.facts dt { font-size: .76rem; color: var(--muted-light); }
+.facts dd { margin: 2px 0 0; font-size: .92rem; }
+.note { border-radius: 9px; padding: .7rem .85rem; font-size: .85rem; margin-bottom: 1rem; display: flex; gap: .6rem; }
+.note-warn { background: rgba(240,180,41,.09); border: 1px solid rgba(240,180,41,.28); color: #f6d17a; }
+.note-ok { background: rgba(46,196,166,.08); border: 1px solid rgba(46,196,166,.28); color: #8ef0db; }
+.note-err { background: rgba(229,83,61,.10); border: 1px solid rgba(229,83,61,.32); color: #f39a8c; }
+.note-info { background: rgba(63,182,232,.08); border: 1px solid rgba(63,182,232,.28); color: #9fd9f3; }
+.drawer-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.drawer-actions form { margin: 0; }
+
+/* ── Tableau des escales ──────────────────────────── */
+.section-title { display: flex; align-items: center; justify-content: space-between; margin: 1.75rem 0 .75rem; }
+.section-title h2 { font-size: 1.15rem; font-weight: 700; }
+.table-wrap { overflow-x: auto; }
+table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.calls th { text-align: left; font-weight: 500; color: var(--muted-light); font-size: .78rem; padding: .7rem 1rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.calls td { padding: .75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.calls tr:last-child td { border-bottom: none; }
+.calls tr:hover td { background: rgba(255,255,255,.015); }
+.calls .vname { display: flex; align-items: center; gap: .6rem; }
+.calls .vname b { font-weight: 500; }
+.calls .vname small { display: block; color: var(--muted); font-size: .75rem; }
+.calls .bar { width: 4px; height: 30px; border-radius: 2px; background: var(--line); flex: none; }
+.calls .muted { color: var(--muted-light); }
+.calls .actions { display: flex; gap: .4rem; justify-content: flex-end; }
+.calls .actions form { margin: 0; }
+.status { display: inline-flex; align-items: center; gap: 5px; font-size: .76rem; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.status-PLANNED { background: rgba(63,182,232,.10); color: #9fd9f3; }
+.status-WORKING { background: rgba(240,180,41,.14); color: var(--accent); }
+.status-COMPLETED { background: rgba(139,150,173,.12); color: var(--muted-light); }
+.shift { color: var(--accent); font-size: .8rem; }
+.prio-tag { color: var(--ok); font-size: .8rem; }
+.empty-state { padding: 2.5rem 1rem; text-align: center; color: var(--muted-light); }
+.empty-state .btn { margin-top: .9rem; }
+
+/* ── Messages (toasts) ────────────────────────────── */
+.toasts { position: fixed; top: 74px; right: 1.25rem; z-index: 100; display: flex; flex-direction: column; gap: .6rem; max-width: 440px; }
+.toast {
+    display: flex; gap: .7rem; align-items: flex-start; padding: .8rem 1rem; border-radius: 10px; font-size: .88rem;
+    background: rgba(14,19,32,.97); border: 1px solid var(--border-2); box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    animation: toastIn .35s cubic-bezier(.22,1,.36,1) both;
+}
+.toast i { margin-top: 3px; }
+.toast button { margin-left: auto; background: none; border: none; color: var(--muted-light); cursor: pointer; padding: 0 0 0 .5rem; }
+.toast.success { border-left: 3px solid var(--ok); } .toast.success i { color: var(--ok); }
+.toast.warning { border-left: 3px solid var(--accent); } .toast.warning i { color: var(--accent); }
+.toast.error   { border-left: 3px solid var(--accent-3); } .toast.error i { color: var(--accent-3); }
+.toast.info    { border-left: 3px solid var(--accent-2); } .toast.info i { color: var(--accent-2); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+/* ═══════════════════ FORMULAIRE ═══════════════════ */
+.form-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.form-card { padding: 1.5rem; }
+.form-card h2 { font-size: 1.05rem; margin-bottom: 1rem; display: flex; align-items: center; gap: .6rem; }
+.form-card h2 .step { width: 24px; height: 24px; border-radius: 7px; background: rgba(240,180,41,.14); color: var(--accent); display: grid; place-items: center; font-size: .78rem; }
+.form-section + .form-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; }
+.field label { display: block; font-size: .82rem; color: var(--muted-light); margin-bottom: .35rem; }
+.field input, .field select {
+    width: 100%; background: rgba(255,255,255,.035); border: 1px solid var(--border-2); border-radius: 9px;
+    padding: .7rem .85rem; font: inherit; font-size: .92rem; color: var(--text); color-scheme: dark;
+    transition: border-color .15s, box-shadow .15s;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,180,41,.14); }
+.field input[readonly] { color: var(--muted-light); }
+.field .help { font-size: .76rem; color: var(--muted); margin-top: .3rem; }
+.field .err { font-size: .8rem; color: #f39a8c; margin-top: .3rem; }
+.field.has-error input, .field.has-error select { border-color: rgba(229,83,61,.6); }
+.duration { font-size: .85rem; color: var(--muted-light); margin-top: .75rem; }
+.duration b { color: var(--text); font-weight: 500; }
+.form-actions { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+.window-check { margin-top: 1rem; }
+.week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: .5rem 0 1rem; }
+.wk { border: 1px solid var(--border); border-radius: 9px; padding: .5rem .3rem; text-align: center; box-shadow: inset 0 3px 0 var(--line); transition: background .15s, border-color .15s; }
+.wk .d { font-size: .76rem; color: var(--muted-light); }
+.wk .n { font-size: .82rem; }
+.wk .o { font-size: .72rem; color: var(--line); font-weight: 500; margin-top: 2px; }
+.wk.sel { background: color-mix(in srgb, var(--line) 14%, transparent); border-color: var(--line); }
+.side-card { padding: 1.25rem; }
+.side-card + .side-card { margin-top: 1rem; }
+.side-card h3 { font-size: .98rem; margin-bottom: .6rem; }
+.side-card p, .side-card li { font-size: .85rem; color: var(--muted-light); }
+.side-card ol { padding-left: 1.1rem; margin: 0; display: grid; gap: .45rem; }
+.side-card strong { color: var(--text); font-weight: 500; }
+
+/* ── Responsive ───────────────────────────────────── */
+@media (max-width: 1100px) {
+    .quay-status { grid-template-columns: 1fr 1fr; }
+    .qs-cell:nth-child(2) { border-right: none; }
+    .qs-cell:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+    .form-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+    .topbar { padding: .6rem 1rem; gap: 1rem; flex-wrap: wrap; }
+    .nav a span { display: none; }
+    .user-chip strong { display: none; }
+    .page { padding: 1rem; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .live { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+</style>
+    
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="{% url 'home' %}">
+            <span class="brand-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3c0 1.3.84 2.4 2 2.82V9H8v2h3v8.9A6 6 0 0 1 6.1 15H4.05A8 8 0 0 0 11 21.9V23h2v-1.1A8 8 0 0 0 19.95 15H17.9A6 6 0 0 1 13 19.9V11h3V9h-3V7.82A3 3 0 0 0 15 5a3 3 0 0 0-3-3zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+            </span>
+            <span class="brand-name">TCN <span>Berth</span> Plan</span>
+        </a>
+
+        {% if user.is_authenticated %}
+        <nav class="nav">
+            {% url 'home' as home_url %}{% url 'call_create' as create_url %}
+            <a href="{{ home_url }}" class="{% if request.path == home_url %}active{% endif %}"><i class="fas fa-ship"></i><span>Berth plan</span></a>
+            <a href="{{ create_url }}" class="{% if request.path == create_url %}active{% endif %}"><i class="fas fa-plus"></i><span>Déclarer une escale</span></a>
+            {% if user.is_staff %}<a href="{% url 'admin:index' %}"><i class="fas fa-gear"></i><span>Administration</span></a>{% endif %}
+        </nav>
+
+        <div class="user-box">
+            <div class="user-chip">
+                <i class="fas fa-circle-user"></i>
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                {% if user.agent_profile %}
+                    <span class="line-pill" data-line="{{ user.agent_profile.line }}"><span class="dot"></span>{{ user.agent_profile.get_line_display }}</span>
+                {% elif user.is_staff %}
+                    <span class="line-pill"><span class="dot"></span>Planificateur TCN</span>
+                {% endif %}
+            </div>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout" title="Déconnexion"><i class="fas fa-right-from-bracket"></i> Déconnexion</button>
+            </form>
+        </div>
+        {% endif %}
+    </header>
+
+    {% if messages %}
+    <div class="toasts" role="status" aria-live="polite">
+        {% for message in messages %}
+        <div class="toast {{ message.tags }}">
+            <i class="fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'warning' %}fa-triangle-exclamation{% elif message.tags == 'error' %}fa-ban{% else %}fa-circle-info{% endif %}"></i>
+            <div>{{ message }}</div>
+            <button type="button" aria-label="Fermer" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="page">
+        <div class="page-head">
+    <div>
+        <h1>Berth plan</h1>
+        <p>Aujourd'hui, le quai est en fenêtre prioritaire
+            <span class="line-pill" data-line="{{ today_owner }}"><span class="dot"></span>{{ today_owner }}</span>
+        </p>
+    </div>
+    <a href="{% url 'call_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Déclarer une escale</a>
+</div>
+
+<!-- État du quai -->
+<section class="panel quay-status" aria-label="État du quai">
+    {% if working %}
+    <div class="qs-cell qs-busy">
+        <div class="k"><span class="pulse" style="color:var(--accent)"></span> Au quai, en opération</div>
+        <div class="v">{{ working.vessel.name }}</div>
+        <div class="s">{{ working.get_line_display }}, jusqu'au {{ working_end|date:"d/m H:i" }}</div>
+    </div>
+    {% else %}
+    <div class="qs-cell qs-free">
+        <div class="k"><i class="fas fa-circle-check"></i> Quai</div>
+        <div class="v">Libre</div>
+        <div class="s">Aucun navire en opération</div>
+    </div>
+    {% endif %}
+    <div class="qs-cell">
+        <div class="k"><i class="fas fa-anchor"></i> Prochain accostage</div>
+        {% if next_call %}
+            <div class="v">{{ next_call.vessel.name }}</div>
+            <div class="s">{{ next_call.planned_start|date:"l d/m H:i" }}</div>
+        {% else %}
+            <div class="v">—</div><div class="s">Aucune escale planifiée</div>
+        {% endif %}
+    </div>
+    <div class="qs-cell">
+        <div class="k"><i class="fas fa-calendar-week"></i> Escales sur 7 jours</div>
+        <div class="v">{{ week_count }}</div>
+        <div class="s">navires planifiés</div>
+    </div>
+    <div class="qs-cell">
+        <div class="k"><i class="fas fa-ruler-horizontal"></i> {{ quay.name }}</div>
+        <div class="v">{{ quay.length_m|floatformat:0 }} m</div>
+        <div class="s">TE max {{ quay.max_draft_m|floatformat:1 }} m · {{ quay.bollards.count }} bollards</div>
+    </div>
+</section>
+
+<!-- Berth plan interactif -->
+<section class="panel plan">
+    <div class="plan-toolbar">
+        <h2>Plan de quai</h2>
+        <div class="seg" role="group" aria-label="Naviguer">
+            <button type="button" data-bp-nav="prev" title="Période précédente"><i class="fas fa-chevron-left"></i></button>
+            <button type="button" data-bp-nav="today">Aujourd'hui</button>
+            <button type="button" data-bp-nav="next" title="Période suivante"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <span class="plan-range" id="bpRange">…</span>
+        <div class="seg" role="group" aria-label="Durée affichée">
+            <button type="button" data-bp-days="3">3 j</button>
+            <button type="button" data-bp-days="7" class="on">7 j</button>
+            <button type="button" data-bp-days="14">14 j</button>
+            <button type="button" data-bp-days="30">30 j</button>
+        </div>
+        {% if my_line %}
+        <label class="toggle"><input type="checkbox" id="bpMine"> Mes navires seulement</label>
+        {% endif %}
+        <span class="live" id="bpLive"><span class="pulse"></span><span id="bpLiveText">Chargement…</span></span>
+    </div>
+
+    <div class="plan-toolbar legend" style="border-bottom:1px solid var(--border)">
+        {% for l in lines %}
+        <span class="legend-item"><span class="swatch" data-line="{{ l.code }}"></span><b>{{ l.code }}</b> {{ l.day_names|join:", " }}</span>
+        {% endfor %}
+        <span class="legend-item" style="margin-left:auto"><span style="width:22px;border-top:1.5px dashed var(--accent)"></span> décalage depuis l'ETA demandé</span>
+    </div>
+
+    <div class="bp" id="berthPlan"
+         data-api="{% url 'api_plan' %}"
+         data-edit-url="{% url 'call_edit' 0 %}"
+         data-cancel-url="{% url 'call_cancel' 0 %}"
+         data-berth-url="{% url 'call_berth' 0 %}"
+         data-complete-url="{% url 'call_complete' 0 %}"
+         data-csrf="{{ csrf_token }}"
+         data-staff="{% if user.is_staff %}1{% else %}0{% endif %}"
+         data-focus="{{ focus }}">
+        <div class="bp-scroll">
+            <div class="bp-grid">
+                <div class="bp-corner"><span><b>Date</b> ↓</span><span><b>Quai (m)</b> →</span></div>
+                <div class="bp-ruler"></div>
+                <div class="bp-timeaxis"></div>
+                <div class="bp-canvas"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Liste des escales -->
+<div class="section-title">
+    <h2>{% if user.is_staff %}Toutes les escales{% else %}Mes escales{% endif %}</h2>
+</div>
+<section class="panel table-wrap">
+    {% if calls %}
+    <table class="calls">
+        <thead>
+            <tr>
+                <th>Navire</th><th>Ligne</th><th>TE</th><th>Bollards</th><th>ETA / ETD demandés</th><th>Accostage prévu</th><th>Statut</th><th>Remarque</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in calls %}
+            <tr>
+                <td>
+                    <div class="vname">
+                        <span class="bar" data-line="{{ c.line }}"></span>
+                        <div><b>{{ c.vessel.name }}</b><small>IMO {{ c.vessel.imo }} · {{ c.vessel.loa|floatformat:0 }} m{% if c.voyage %} · V.{{ c.voyage }}{% endif %}</small></div>
+                    </div>
+                </td>
+                <td>{{ c.get_line_display }}</td>
+                <td>{% if c.draft %}{{ c.draft|floatformat:1 }} m{% else %}<span class="muted">—</span>{% endif %}</td>
+                <td class="muted">{{ c.bollard_from.name|default:"—" }} → {{ c.bollard_to.name|default:"—" }}</td>
+                <td class="muted">{{ c.eta|date:"d/m H:i" }} → {{ c.etd|date:"d/m H:i" }}</td>
+                <td>{{ c.planned_start|date:"D d/m H:i" }} → {{ c.planned_end|date:"d/m H:i" }}</td>
+                <td><span class="status status-{{ c.status }}">{{ c.get_status_display }}</span></td>
+                <td>
+                    {% if c.shift_reason %}<span class="shift"><i class="fas fa-clock-rotate-left"></i> {{ c.shift_reason }}</span>
+                    {% elif c.is_priority and c.status == 'PLANNED' %}<span class="prio-tag"><i class="fas fa-star"></i> Fenêtre prioritaire</span>
+                    {% else %}<span class="muted">—</span>{% endif %}
+                </td>
+                <td>
+                    <div class="actions">
+                        <a class="btn btn-sm" href="?focus={{ c.pk }}" title="Voir sur le plan"><i class="fas fa-location-crosshairs"></i></a>
+                        {% if c.can_edit %}
+                        <a class="btn btn-sm" href="{% url 'call_edit' c.pk %}" title="Modifier"><i class="fas fa-pen"></i></a>
+                        <form method="post" action="{% url 'call_cancel' c.pk %}" onsubmit="return confirm('Annuler cette escale ?')">
+                            {% csrf_token %}<button class="btn btn-sm btn-danger" title="Annuler l'escale"><i class="fas fa-xmark"></i></button>
+                        </form>
+                        {% endif %}
+                        {% if user.is_staff and c.status == 'PLANNED' and not working %}
+                        <form method="post" action="{% url 'call_berth' c.pk %}" onsubmit="return confirm('Confirmer l\'accostage de {{ c.vessel.name|escapejs }} ?')">
+                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="Démarrer les opérations"><i class="fas fa-anchor"></i></button>
+                        </form>
+                        {% endif %}
+                        {% if user.is_staff and c.status == 'WORKING' %}
+                        <form method="post" action="{% url 'call_complete' c.pk %}" onsubmit="return confirm('Terminer les opérations ?')">
+                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="Terminer les opérations"><i class="fas fa-flag-checkered"></i></button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>Vous n'avez encore déclaré aucune escale.</p>
+        <a href="{% url 'call_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Déclarer une escale</a>
+    </div>
+    {% endif %}
+</section>
+
+<!-- Infobulle + tiroir de détail -->
+<div class="bp-tooltip" id="bpTooltip" role="tooltip"></div>
+<aside class="drawer" id="bpDrawer" aria-label="Détail de l'escale">
+    <div class="drawer-head">
+        <button type="button" class="drawer-close" aria-label="Fermer"><i class="fas fa-xmark"></i></button>
+        <div id="bpDrawerHead"></div>
+    </div>
+    <div class="drawer-body" id="bpDrawerBody"></div>
+</aside>
+<div class="drawer-backdrop" id="bpBackdrop"></div>
+    </main>
+
+    <script>
+        // couleur de la ligne sur les pastilles
+        const LINE_COLORS = {MAE: '#42b0d5', HLC: '#f58220', CMA: '#e5533d', ARK: '#2ec4a6'};
+        document.querySelectorAll('.line-pill[data-line]').forEach(el => el.style.setProperty('--line', LINE_COLORS[el.dataset.line]));
+        // les messages se ferment seuls (sauf erreurs)
+        document.querySelectorAll('.toast:not(.error)').forEach(t => setTimeout(() => t.remove(), 9000));
+    </script>
+    <script>
+    document.querySelectorAll('.swatch[data-line], .bar[data-line]').forEach(el => el.style.setProperty('--line', LINE_COLORS[el.dataset.line]));
+</script>
+<script>
+{% verbatim %}
+/* ═══════════════════════════════════════════════════════════
+   TCN Berth Plan — rendu interactif temps réel
+   Axe horizontal = quai (métrage + bollards), axe vertical = temps (jours / heures)
+   Chaque navire occupe sa LOA le long du quai, de son accostage à son départ.
+   ═══════════════════════════════════════════════════════════ */
+(() => {
+    'use strict';
+    const root = document.getElementById('berthPlan');
+    if (!root) return;
+
+    const HOUR = 36e5;
+    const AXIS_W = 124;      // colonne des dates (px)
+    const HEAD_H = 78;       // règle du quai (px)
+    const PAD_X = 16;        // marge de part et d'autre du quai (px)
+    const HOUR_PX = { 3: 24, 7: 12, 14: 7, 30: 3.6 };
+    const REFRESH_MS = 20000;
+
+    const cfg = {
+        api: root.dataset.api,
+        urls: {
+            edit: root.dataset.editUrl, cancel: root.dataset.cancelUrl,
+            berth: root.dataset.berthUrl, complete: root.dataset.completeUrl,
+        },
+        csrf: root.dataset.csrf,
+        staff: root.dataset.staff === '1',
+        focus: root.dataset.focus ? parseInt(root.dataset.focus, 10) : null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const els = {
+        scroll: root.querySelector('.bp-scroll'),
+        grid: root.querySelector('.bp-grid'),
+        ruler: root.querySelector('.bp-ruler'),
+        axis: root.querySelector('.bp-timeaxis'),
+        canvas: root.querySelector('.bp-canvas'),
+        range: $('bpRange'), live: $('bpLive'), liveText: $('bpLiveText'),
+        tooltip: $('bpTooltip'), drawer: $('bpDrawer'), drawerBody: $('bpDrawerBody'),
+        drawerHead: $('bpDrawerHead'), backdrop: $('bpBackdrop'),
+    };
+
+    const state = { start: addDays(startOfDay(new Date()), -1), days: 7, data: null, mineOnly: false, autoScrolled: false };
+
+    /* ── utilitaires ─────────────────────────────── */
+    function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+    function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+    const pad = (n) => String(n).padStart(2, '0');
+    const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const fmt = (iso) => { const d = new Date(iso); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+    const fmtTime = (iso) => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+    const num = (n) => (Math.round(n * 10) / 10).toLocaleString('fr-FR');
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const urlFor = (tpl, id) => tpl.replace(/\/0\//, `/${id}/`);
+    function duration(min) {
+        const h = Math.floor(min / 60), m = Math.round(min % 60);
+        if (h >= 24) return `${Math.floor(h / 24)} j ${h % 24} h`;
+        return m ? `${h} h ${pad(m)}` : `${h} h`;
+    }
+    function rng(seed) { let s = (seed * 2654435761) % 4294967296; return () => ((s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296); }
+    const bollardsText = (c) => (c.bollard_from && c.bollard_to ? `${c.bollard_from} → ${c.bollard_to}` : '—');
+    const metrage = (c, Q) => `${num(Q.start_m + c.berth_from)} → ${num(Q.start_m + c.berth_to)} m`;
+
+    /* ── dessin du porte-conteneurs (vue de profil, à l'échelle de la LOA) ── */
+    let uid = 0;
+    const BOX_COLORS = ['#d64532', '#2f78c4', '#e8b33a', '#3aa57a', '#d9dee8', '#6c7a96', '#b5562b'];
+
+    function shipSVG(w, h, color, seed, status) {
+        const W = Math.max(w, 8), H = Math.max(h, 24);
+        const k = ++uid;
+        if (W < 48) {
+            return `<svg class="bp-ship" width="${W}" height="${H}" aria-hidden="true">
+                <rect x="1" y="${H * 0.45}" width="${W - 2}" height="${H * 0.5}" rx="3" fill="#15203a" stroke="${color}" stroke-width="1.5"/>
+                <rect x="1" y="${H * 0.45}" width="${W - 2}" height="${H * 0.12}" fill="${color}"/></svg>`;
+        }
+        const R = rng(seed);
+        const deck = H * 0.50, wl = H * 0.80, keel = H * 0.97;
+        const sheer = deck - H * 0.07;
+        const bowLen = Math.min(52, W * 0.14), sternLen = Math.min(16, W * 0.045);
+
+        // Coque : étrave inclinée + bulbe d'étrave, arrière arrondi
+        const hull = `M0 ${deck} L${W - bowLen} ${deck} Q${W - bowLen * 0.4} ${deck} ${W} ${sheer}
+            L${W - bowLen * 0.55} ${wl}
+            Q${W - bowLen * 0.08} ${wl + (keel - wl) * 0.15} ${W - bowLen * 0.16} ${wl + (keel - wl) * 0.6}
+            Q${W - bowLen * 0.3} ${keel} ${W - bowLen * 0.75} ${keel}
+            L${sternLen * 1.6} ${keel} Q${sternLen * 0.4} ${keel} ${sternLen * 0.25} ${wl} L0 ${deck} Z`;
+
+        let s = `<svg class="bp-ship" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+            <defs>
+                <clipPath id="hc${k}"><path d="${hull}"/></clipPath>
+                <linearGradient id="hg${k}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#22305a"/><stop offset="1" stop-color="#0f1730"/></linearGradient>
+                <linearGradient id="ag${k}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#c2412f"/><stop offset="1" stop-color="#6e1f17"/></linearGradient>
+                <pattern id="rb${k}" width="2.6" height="8" patternUnits="userSpaceOnUse">
+                    <rect width="0.9" height="8" fill="#000" opacity=".22"/></pattern>
+            </defs>`;
+
+        // Coque peinte : bande couleur ligne, flottaison blanche, carène rouge
+        s += `<g clip-path="url(#hc${k})">
+            <rect x="0" y="0" width="${W}" height="${H}" fill="url(#hg${k})"/>
+            <rect x="0" y="${sheer - 2}" width="${W}" height="${(wl - deck) * 0.2 + (deck - sheer) + 2}" fill="${color}" opacity=".95"/>
+            <rect x="0" y="${wl - 1.2}" width="${W}" height="2.4" fill="#e8edf5" opacity=".9"/>
+            <rect x="0" y="${wl + 1.2}" width="${W}" height="${keel - wl}" fill="url(#ag${k})"/>
+        </g>
+        <path d="${hull}" fill="none" stroke="rgba(232,237,245,.35)" stroke-width="1"/>`;
+
+        // Écume à l'étrave
+        const fx = W - bowLen * 0.55;
+        s += `<path d="M${fx - 14} ${wl + 1} q4 -3 8 0 t8 0 t8 0" fill="none" stroke="#e8edf5" stroke-width="1.2" opacity=".5"/>`;
+
+        // Château (accommodation blanche) à l'arrière
+        const bx = sternLen + W * 0.02, bw = Math.max(14, Math.min(42, W * 0.075)), bTop = H * 0.12;
+        s += `<rect x="${bx}" y="${bTop}" width="${bw}" height="${deck - bTop}" rx="1.5" fill="#e3e8f0"/>
+              <rect x="${bx - 3}" y="${bTop}" width="${bw + 6}" height="3" rx="1" fill="#f4f6fa"/>`;
+        for (let y = bTop + 5, row = 0; y < deck - 3; y += 5, row++) {
+            const lit = row === 0 ? '#f0b429' : (R() < 0.35 ? '#f6d17a' : '#1a2438');
+            s += `<line x1="${bx + 2}" y1="${y}" x2="${bx + bw - 2}" y2="${y}" stroke="${lit}" stroke-width="2" stroke-dasharray="2.2 1.4"/>`;
+        }
+        // Mât radar + cheminée aux couleurs de la ligne
+        const rx = bx + bw * 0.3;
+        s += `<line x1="${rx}" y1="${bTop}" x2="${rx}" y2="${bTop - H * 0.08}" stroke="#c9d2e3" stroke-width="1.2"/>
+              <line x1="${rx - 4}" y1="${bTop - H * 0.06}" x2="${rx + 4}" y2="${bTop - H * 0.06}" stroke="#c9d2e3" stroke-width="1.2"/>`;
+        const fw = Math.max(6, bw * 0.38), fnx = bx + bw * 0.55, fTop = Math.max(1, bTop - H * 0.1);
+        s += `<path d="M${fnx} ${bTop} L${fnx + 1.5} ${fTop} L${fnx + fw} ${fTop} L${fnx + fw} ${bTop} Z" fill="${color}"/>
+              <rect x="${fnx + 1.5}" y="${fTop}" width="${fw - 1.5}" height="2.5" fill="#070a12"/>
+              <rect x="${fnx + 1}" y="${fTop + (bTop - fTop) * 0.45}" width="${fw - 1}" height="2" fill="#f4f6fa" opacity=".9"/>`;
+
+        // Conteneurs : baies de 40' séparées par les ponts de saisissage
+        const cs = bx + bw + 5, ce = W - bowLen * 0.85;
+        const cw = 12, bayW = cw * 2 + 1, gap = 3;
+        const rows = H > 150 ? 5 : H > 110 ? 4 : H > 70 ? 3 : 2;
+        const rowH = Math.max(4, Math.min(11, (deck - H * 0.1) / rows - 1));
+        const bays = Math.max(0, Math.floor((ce - cs) / (bayW + gap)));
+        const palette = [color, color, color, ...BOX_COLORS];
+        for (let b = 0; b < bays; b++) {
+            const x0 = cs + b * (bayW + gap);
+            const nearBow = b >= bays - 2;
+            s += `<rect x="${x0 - 1}" y="${deck - 2}" width="${bayW + 2}" height="2" fill="#3a4766"/>`;
+            for (let c = 0; c < 2; c++) {
+                const stack = rows - (nearBow ? 1 : 0) - (R() < 0.22 ? 1 : 0);
+                for (let r = 0; r < stack; r++) {
+                    const x = x0 + c * (cw + 1), y = deck - 2 - (r + 1) * (rowH + 1);
+                    const fill = palette[Math.floor(R() * palette.length)];
+                    s += `<rect x="${x}" y="${y}" width="${cw}" height="${rowH}" rx=".8" fill="${fill}"/>
+                          <rect x="${x}" y="${y}" width="${cw}" height="${rowH}" fill="url(#rb${k})"/>`;
+                }
+            }
+        }
+
+        // Gaillard d'avant + mât avec feu
+        const mx = W - bowLen * 0.7;
+        s += `<line x1="${mx}" y1="${deck - 1}" x2="${mx}" y2="${deck - H * 0.24}" stroke="#c9d2e3" stroke-width="1.4"/>
+              <circle class="bp-mast-light" cx="${mx}" cy="${deck - H * 0.24}" r="2.4" fill="#f0b429"/>`;
+
+        // Navire en opération : portiques de quai (STS) en action
+        if (status === 'WORKING' && bays >= 3) {
+            [0.3, 0.68].forEach((p, i) => {
+                const cx = cs + (ce - cs) * p;
+                const top = H * 0.03, legH = deck - H * 0.06;
+                s += `<g class="bp-crane" opacity=".95">
+                    <line x1="${cx}" y1="${top}" x2="${cx}" y2="${legH}" stroke="#f0b429" stroke-width="2"/>
+                    <line x1="${cx + 10}" y1="${top}" x2="${cx + 10}" y2="${legH}" stroke="#f0b429" stroke-width="2"/>
+                    <line x1="${cx - 18}" y1="${top}" x2="${cx + 34}" y2="${top}" stroke="#f0b429" stroke-width="2.5"/>
+                    <line x1="${cx}" y1="${top + 8}" x2="${cx + 10}" y2="${top + 2}" stroke="#f0b429" stroke-width="1"/>
+                    <g class="bp-trolley" style="animation-delay:${i * -2.5}s">
+                        <rect x="${cx - 14}" y="${top + 1}" width="7" height="3" fill="#e8edf5"/>
+                        <g class="bp-hoist" style="animation-delay:${i * -2.5}s">
+                            <line x1="${cx - 10.5}" y1="${top + 4}" x2="${cx - 10.5}" y2="${top + 14}" stroke="#c9d2e3" stroke-width=".8"/>
+                            <rect x="${cx - 16}" y="${top + 14}" width="11" height="${Math.max(4, rowH * 0.8)}" rx=".8" fill="${palette[i + 3]}"/>
+                        </g>
+                    </g></g>`;
+            });
+        }
+        return s + '</svg>';
+    }
+
+    /* ── chargement ──────────────────────────────── */
+    async function load() {
+        try {
+            const res = await fetch(`${cfg.api}?start=${ymd(state.start)}&days=${state.days}`, {
+                headers: { Accept: 'application/json' }, credentials: 'same-origin',
+            });
+            if (res.redirected || !res.ok) throw new Error(res.status);
+            state.data = await res.json();
+            render();
+            setLive(true);
+        } catch (e) {
+            setLive(false);
+        }
+    }
+
+    function setLive(ok) {
+        els.live.classList.toggle('off', !ok);
+        els.liveText.textContent = ok ? `En direct, mis à jour à ${fmtTime(new Date().toISOString())}` : 'Connexion perdue, nouvelle tentative…';
+    }
+
+    /* ── rendu ───────────────────────────────────── */
+    function render() {
+        const d = state.data;
+        if (!d) return;
+        const Q = d.quay, L = Q.length;
+        const avail = els.scroll.clientWidth || 1000;
+        const mPx = Math.max((avail - AXIS_W - PAD_X * 2 - 2) / L, 1.8);
+        const quayW = Math.round(L * mPx + PAD_X * 2);
+        const XM = (m) => PAD_X + m * mPx;
+        const hPx = HOUR_PX[state.days] || 12;
+        const dayH = 24 * hPx;
+        const totalH = Math.round(state.days * dayH);
+        const rs = +new Date(d.range.start);
+        const Y = (t) => (+new Date(t) - rs) / HOUR * hPx;
+        const todayYmd = ymd(new Date());
+        const ny = Y(d.now);
+
+        els.grid.style.gridTemplateColumns = `${AXIS_W}px ${quayW}px`;
+        els.grid.style.gridTemplateRows = `${HEAD_H}px ${totalH}px`;
+
+        /* Règle du quai : métrage + bollards */
+        const steps = [10, 20, 25, 50, 100, 200, 500];
+        const step = steps.find((s) => s * mPx >= 56) || 500;
+        let r = `<div class="bp-ruler-title"><i class="fas fa-ruler-horizontal"></i> ${esc(Q.name)} · ${num(L)} m · TE max ${num(Q.max_draft)} m · ${Q.bollards.length} bollards</div>
+                 <div class="bp-quay-wall" style="left:${XM(0)}px;width:${L * mPx}px"></div>`;
+        for (let m = 0; m < L - 0.01; m += step) {
+            if ((L - m) * mPx < 44) continue;   // évite de chevaucher le métrage de fin
+            r += `<div class="bp-mtick" style="left:${XM(m)}px"><span>${num(Q.start_m + m)}</span></div>`;
+        }
+        r += `<div class="bp-mtick end" style="left:${XM(L)}px"><span>${num(Q.start_m + L)}</span></div>`;
+        let minGap = Infinity;
+        Q.bollards.forEach((b, i) => { if (i) minGap = Math.min(minGap, (b.pos - Q.bollards[i - 1].pos) * mPx); });
+        const every = Math.max(1, Math.ceil(30 / (minGap === Infinity ? 30 : minGap)));
+        Q.bollards.forEach((b, i) => {
+            r += `<div class="bp-bollard" style="left:${XM(b.pos)}px" title="${esc(b.name)} · ${num(Q.start_m + b.pos)} m"><i></i>${i % every === 0 ? `<span>${esc(b.name)}</span>` : ''}</div>`;
+        });
+        els.ruler.innerHTML = r;
+
+        /* Colonne des dates (fenêtres prioritaires) */
+        const hStep = hPx >= 18 ? 2 : hPx >= 10 ? 4 : hPx >= 6 ? 6 : 12;
+        let a = '';
+        d.windows.forEach((w, i) => {
+            const top = i * dayH, Lc = d.lines[w.owner];
+            a += `<div class="bp-dayaxis ${w.date === todayYmd ? 'is-today' : ''}" style="top:${top}px;height:${dayH}px;--line:${Lc.color}">
+                <div class="bp-dayaxis-label"><b>${w.day_short} ${w.num}</b><span><i></i>Fenêtre ${w.owner}</span></div></div>`;
+            if (dayH >= 60) {
+                for (let h = hStep; h < 24; h += hStep) a += `<div class="bp-htick" style="top:${top + h * hPx}px">${pad(h)}:00</div>`;
+            }
+        });
+        if (ny >= 0 && ny <= totalH) a += `<div class="bp-now-tag" style="top:${ny}px">${fmtTime(d.now)}</div>`;
+        els.axis.innerHTML = a;
+
+        /* Plan d'eau */
+        let html = '';
+        d.windows.forEach((w, i) => {
+            html += `<div class="bp-window" style="top:${i * dayH}px;height:${dayH}px;--line:${d.lines[w.owner].color}"><span class="bp-window-tag">${w.owner}</span></div>`;
+            if (dayH >= 60) for (let h = hStep; h < 24; h += hStep) html += `<div class="bp-hline" style="top:${i * dayH + h * hPx}px"></div>`;
+        });
+        Q.bollards.forEach((b) => { html += `<div class="bp-bline" style="left:${XM(b.pos)}px"></div>`; });
+        html += `<div class="bp-quayzone" style="left:${XM(0)}px;width:${L * mPx}px"></div>`;
+
+        let visible = 0;
+        for (const c of d.calls) {
+            const top = Y(c.start), bottom = Y(c.end);
+            if (bottom < 0 || top > totalH) continue;
+            visible++;
+            const h = Math.max(bottom - top, 18);
+            const left = XM(c.berth_from);
+            const w = Math.max(c.loa * mPx, 34);
+
+            if (c.shifted && c.status === 'PLANNED') {
+                const gy = Y(c.eta), gh = Y(c.etd) - gy;
+                html += `<div class="bp-ghost" style="left:${left}px;width:${w}px;top:${gy}px;height:${gh}px;--line:${c.color}"><span>ETA demandé · ${esc(c.vessel)}</span></div>`;
+                if (top - gy > 14) html += `<div class="bp-shift" style="left:${left + w + 8}px;top:${gy}px;height:${top - gy}px"><span>+${duration(c.delay_minutes)}</span></div>`;
+            }
+
+            const shipH = Math.min(h, Math.max(28, Math.min(w * 0.42, 150)));
+            const cls = ['bp-vessel', `is-${c.status.toLowerCase()}`];
+            if (c.mine) cls.push('is-mine');
+            if (state.mineOnly && !c.mine) cls.push('is-dimmed');
+            const badges = [];
+            if (c.status === 'WORKING') badges.push('<span class="bp-badge working">En opération</span>');
+            if (c.is_priority && c.status === 'PLANNED') badges.push(`<span class="bp-badge prio">Prioritaire ${c.line}</span>`);
+            if (c.mine) badges.push('<span class="bp-badge mine">Mon navire</span>');
+
+            const label = (w > 110 && shipH >= 44)
+                ? `<div class="bp-label" style="top:${shipH * 0.5}px;height:${shipH * 0.3}px"><b>${esc(c.vessel)}</b><span>${c.line} · ${num(c.loa)} m${c.draft ? ' · TE ' + num(c.draft) + ' m' : ''}</span></div>` : '';
+            const info = (h - shipH >= 34 && w > 110)
+                ? `<div class="bp-info" style="top:${shipH + 4}px">
+                     ${label ? '' : `<b>${esc(c.vessel)}</b>`}
+                     <span><i class="fas fa-clock"></i> ${fmt(c.start)} → ${fmt(c.end)}</span>
+                     <span><i class="fas fa-grip-lines-vertical"></i> ${bollardsText(c)} · ${metrage(c, Q)}</span>
+                   </div>` : '';
+
+            html += `<div class="${cls.join(' ')}" data-id="${c.id}" tabindex="0" role="button"
+                        aria-label="${esc(c.vessel)}, ${esc(c.line_name)}, ${fmt(c.start)} à ${fmt(c.end)}, bollards ${bollardsText(c)}"
+                        style="left:${left}px;width:${w}px;top:${top}px;height:${h}px;--line:${c.color}">
+                <div class="bp-occ"></div>
+                ${shipSVG(w, shipH, c.color, c.id, c.status)}
+                ${label}${info}
+                ${badges.length && w > 80 ? `<div class="bp-badges">${badges.join('')}</div>` : ''}
+            </div>`;
+        }
+
+        if (ny >= 0 && ny <= totalH) html += `<div class="bp-now" style="top:${ny}px"></div>`;
+        if (!visible) html += `<div class="bp-empty"><div>Aucun navire sur cette période. Le quai est disponible.</div></div>`;
+        els.canvas.innerHTML = html;
+
+        const last = addDays(new Date(d.range.end), -1);
+        els.range.textContent = `${fmt(d.range.start).slice(0, 5)} au ${pad(last.getDate())}/${pad(last.getMonth() + 1)}`;
+
+        if (!state.autoScrolled) {
+            state.autoScrolled = true;
+            const focusEl = cfg.focus && els.canvas.querySelector(`.bp-vessel[data-id="${cfg.focus}"]`);
+            if (focusEl) {
+                els.scroll.scrollTop = Math.max(0, focusEl.offsetTop - 60);
+                focusEl.classList.add('is-focus');
+                const c = d.calls.find((x) => x.id === cfg.focus);
+                if (c) openDrawer(c);
+                cfg.focus = null;
+            } else if (ny > 0) {
+                els.scroll.scrollTop = Math.max(0, ny - 120);
+            } else {
+                els.scroll.scrollTop = 0;
+            }
+        }
+    }
+
+    /* ── infobulle ───────────────────────────────── */
+    function tooltipHTML(c) {
+        const Q = state.data.quay;
+        return `<h4>${esc(c.vessel)}</h4>
+            <dl><dt>Ligne</dt><dd>${esc(c.line_name)}</dd>
+            <dt>IMO / LOA</dt><dd>${c.imo} · ${num(c.loa)} m</dd>
+            <dt>Tirant d'eau</dt><dd>${c.draft ? num(c.draft) + ' m' : '—'}</dd>
+            <dt>Bollards</dt><dd>${bollardsText(c)}</dd>
+            <dt>Métrage</dt><dd>${metrage(c, Q)}</dd>
+            <dt>Accostage</dt><dd>${fmt(c.start)}</dd>
+            <dt>Départ</dt><dd>${fmt(c.end)}</dd>
+            <dt>Statut</dt><dd>${esc(c.status_label)}</dd></dl>
+            ${c.shift_reason ? `<div class="warn">${esc(c.shift_reason)}</div>` : ''}`;
+    }
+    const findCall = (el) => el && state.data?.calls.find((c) => c.id === +el.dataset.id);
+
+    els.canvas.addEventListener('mousemove', (e) => {
+        const c = findCall(e.target.closest('.bp-vessel'));
+        if (!c) { els.tooltip.style.display = 'none'; return; }
+        els.tooltip.innerHTML = tooltipHTML(c);
+        els.tooltip.style.setProperty('--line', c.color);
+        els.tooltip.style.display = 'block';
+        const r = els.tooltip.getBoundingClientRect();
+        let x = e.clientX + 16, y = e.clientY + 16;
+        if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 16;
+        if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 16;
+        els.tooltip.style.left = x + 'px';
+        els.tooltip.style.top = y + 'px';
+    });
+    els.canvas.addEventListener('mouseleave', () => { els.tooltip.style.display = 'none'; });
+    els.canvas.addEventListener('click', (e) => {
+        const c = findCall(e.target.closest('.bp-vessel'));
+        if (c) openDrawer(c);
+    });
+    els.canvas.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const c = findCall(e.target.closest('.bp-vessel'));
+        if (c) { e.preventDefault(); openDrawer(c); }
+    });
+
+    /* ── tiroir de détail ────────────────────────── */
+    const postForm = (url, label, cls, confirmMsg) =>
+        `<form method="post" action="${url}" ${confirmMsg ? `onsubmit="return confirm('${confirmMsg}')"` : ''}>
+            <input type="hidden" name="csrfmiddlewaretoken" value="${cfg.csrf}">
+            <button class="btn ${cls}" type="submit">${label}</button></form>`;
+
+    function openDrawer(c) {
+        const Q = state.data.quay;
+        els.tooltip.style.display = 'none';
+        els.drawer.style.setProperty('--line', c.color);
+        els.drawerHead.innerHTML = `
+            <span class="line-pill" style="--line:${c.color}"><span class="dot"></span>${esc(c.line_name)}</span>
+            <h3 style="margin-top:.5rem">${esc(c.vessel)}</h3>
+            <div class="drawer-ship">${shipSVG(370, 120, c.color, c.id, c.status)}</div>`;
+
+        let notes = '';
+        if (c.status === 'WORKING') notes += `<div class="note note-warn"><i class="fas fa-anchor"></i><div>Navire à quai, opérations en cours. Aucune saisie n'est possible sur cette période.</div></div>`;
+        if (c.shift_reason) notes += `<div class="note note-warn"><i class="fas fa-clock-rotate-left"></i><div>${esc(c.shift_reason)}. Décalage de ${duration(c.delay_minutes)} par rapport à l'ETA demandé.</div></div>`;
+        else if (c.is_priority && c.status === 'PLANNED') notes += `<div class="note note-ok"><i class="fas fa-star"></i><div>ETA dans la fenêtre prioritaire ${c.line}. Ce navire passe avant les autres lignes ce jour-là.</div></div>`;
+        else if (c.status === 'PLANNED' && c.window_owner !== c.line) notes += `<div class="note note-info"><i class="fas fa-circle-info"></i><div>ETA dans la fenêtre ${c.window_owner}. Si un navire ${c.window_owner} est déclaré sur ce créneau, ce navire sera décalé.</div></div>`;
+
+        let actions = '';
+        if (c.can_edit) {
+            actions += `<a class="btn" href="${urlFor(cfg.urls.edit, c.id)}"><i class="fas fa-pen"></i> Modifier</a>`;
+            actions += postForm(urlFor(cfg.urls.cancel, c.id), '<i class="fas fa-xmark"></i> Annuler l\'escale', 'btn-danger', 'Annuler cette escale ?');
+        }
+        if (cfg.staff && c.status === 'PLANNED' && !state.data.working_id) {
+            actions += postForm(urlFor(cfg.urls.berth, c.id), '<i class="fas fa-anchor"></i> Démarrer les opérations', 'btn-ok', 'Confirmer l\'accostage de ce navire ?');
+        }
+        if (cfg.staff && c.status === 'WORKING') {
+            actions += postForm(urlFor(cfg.urls.complete, c.id), '<i class="fas fa-flag-checkered"></i> Terminer les opérations', 'btn-ok', 'Confirmer la fin des opérations ?');
+        }
+
+        els.drawerBody.innerHTML = `${notes}
+            <dl class="facts">
+                <div><dt>N° IMO</dt><dd>${c.imo}</dd></div>
+                <div><dt>LOA</dt><dd>${num(c.loa)} m</dd></div>
+                <div><dt>Tirant d'eau</dt><dd>${c.draft ? num(c.draft) + ' m' : '—'}</dd></div>
+                <div><dt>Voyage</dt><dd>${esc(c.voyage) || '—'}</dd></div>
+                <div><dt>Bollards</dt><dd>${bollardsText(c)}</dd></div>
+                <div><dt>Métrage au quai</dt><dd>${metrage(c, Q)}</dd></div>
+                <div><dt>ETA demandé</dt><dd>${fmt(c.eta)}</dd></div>
+                <div><dt>ETD demandé</dt><dd>${fmt(c.etd)}</dd></div>
+                <div><dt>Accostage prévu</dt><dd>${fmt(c.start)}</dd></div>
+                <div><dt>Départ prévu</dt><dd>${fmt(c.end)}</dd></div>
+                <div><dt>Agent</dt><dd>${esc(c.agent)}</dd></div>
+                <div><dt>Statut</dt><dd><span class="status status-${c.status}">${esc(c.status_label)}</span></dd></div>
+            </dl>
+            ${actions ? `<div class="drawer-actions">${actions}</div>` : ''}`;
+        els.drawer.classList.add('open');
+        els.backdrop.classList.add('open');
+        els.drawer.querySelector('.drawer-close').focus();
+    }
+    function closeDrawer() { els.drawer.classList.remove('open'); els.backdrop.classList.remove('open'); }
+    els.drawer.querySelector('.drawer-close').addEventListener('click', closeDrawer);
+    els.backdrop.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+    /* ── barre d'outils ──────────────────────────── */
+    document.querySelectorAll('[data-bp-nav]').forEach((b) => b.addEventListener('click', () => {
+        const a = b.dataset.bpNav;
+        if (a === 'prev') state.start = addDays(state.start, -Math.max(1, Math.floor(state.days / 2)));
+        if (a === 'next') state.start = addDays(state.start, Math.max(1, Math.floor(state.days / 2)));
+        if (a === 'today') state.start = addDays(startOfDay(new Date()), -1);
+        state.autoScrolled = false;
+        load();
+    }));
+    document.querySelectorAll('[data-bp-days]').forEach((b) => b.addEventListener('click', () => {
+        document.querySelectorAll('[data-bp-days]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        state.days = +b.dataset.bpDays;
+        state.autoScrolled = false;
+        load();
+    }));
+    const mine = $('bpMine');
+    if (mine) mine.addEventListener('change', () => { state.mineOnly = mine.checked; render(); });
+
+    let rt;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+    setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
+    load();
+})();
+
+{% endverbatim %}
+</script>
+</body>
+</html>

@@ -1,0 +1,516 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — TCN Berth Plan</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --surface:     #070a12;
+            --panel:       #0e1320;
+            --panel-2:     #131a2a;
+            --border:      rgba(120,160,220,0.12);
+            --accent:      #f0b429;      /* jaune conteneur */
+            --accent-2:    #3fb6e8;      /* bleu maritime */
+            --accent-3:    #e5533d;      /* rouge portuaire */
+            --accent-glow: rgba(240,180,41,0.30);
+            --text:        #e8edf5;
+            --muted:       #5a6580;
+            --muted-light: #8b96ad;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--surface);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 300;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Scène portuaire de fond (SVG) ── */
+        .port-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.55;
+        }
+        .port-bg svg { width: 100%; height: 100%; }
+
+        /* Halo doré global */
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-glow-1 { top: -220px; right: -160px; }
+        .bg-glow-2 { bottom: -240px; left: -180px; opacity: 0.10;
+                     background: radial-gradient(circle, rgba(63,182,232,0.6) 0%, transparent 70%); }
+
+        /* Grain */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.035;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 200px 200px;
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 440px;
+            padding: 0 1.5rem;
+            animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card {
+            background: linear-gradient(160deg, rgba(19,26,42,0.92), rgba(14,19,32,0.96));
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 2.5rem 2rem 2rem;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.55),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Fine ligne "quai" supérieure */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg,
+                var(--accent-3) 0%,
+                var(--accent) 35%,
+                var(--accent-2) 100%);
+            opacity: 0.9;
+        }
+
+        /* ── Brand ── */
+        .login-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 1.75rem;
+        }
+
+        .brand-icon {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(140deg, var(--accent), #d99a12);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 8px 28px var(--accent-glow);
+        }
+
+        .brand-icon svg {
+            width: 26px;
+            height: 26px;
+            fill: #070a12;
+        }
+
+        .brand-text {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.32rem;
+            color: var(--text);
+            letter-spacing: -0.025em;
+            line-height: 1.15;
+        }
+        .brand-text span { color: var(--accent); }
+
+        .brand-sub {
+            font-size: 0.58rem;
+            font-weight: 400;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted-light);
+            margin-top: 3px;
+        }
+
+        /* ── Titre ── */
+        .login-title {
+            text-align: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text);
+            margin-bottom: 0.35rem;
+            letter-spacing: -0.02em;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--muted-light);
+            margin-bottom: 1.8rem;
+        }
+
+        /* ── Alertes ── */
+        .alert-custom {
+            background: rgba(229,83,61,0.10);
+            border: 1px solid rgba(229,83,61,0.30);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: #f39a8c;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-custom .btn-close {
+            filter: invert(0.7);
+            margin-left: auto;
+            padding: 0;
+            font-size: 0.7rem;
+        }
+
+        /* ── Champs ── */
+        .input-group-custom {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .input-group-custom .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 0.85rem;
+            pointer-events: none;
+            transition: color 0.2s;
+            z-index: 2;
+        }
+
+        .input-group-custom input {
+            width: 100%;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.85rem 1rem 0.85rem 2.6rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.92rem;
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .input-group-custom input::placeholder { color: var(--muted); }
+
+        .input-group-custom input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(240,180,41,0.05);
+            box-shadow: 0 0 0 3px rgba(240,180,41,0.14);
+        }
+
+        .input-group-custom input:focus ~ .input-icon { color: var(--accent); }
+
+        /* ── Options ── */
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.82rem;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .form-check-label {
+            color: var(--muted-light);
+            font-size: 0.82rem;
+            margin-left: 4px;
+        }
+
+        /* ── Bouton ── */
+        .btn-login {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent), #d99a12);
+            color: #070a12;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.88rem;
+            letter-spacing: 0.05em;
+            border: none;
+            border-radius: 10px;
+            padding: 0.88rem;
+            cursor: pointer;
+            transition: opacity 0.18s, box-shadow 0.18s, transform 0.18s;
+        }
+
+        .btn-login:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 34px var(--accent-glow);
+            color: #070a12;
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ── Footer ── */
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.70rem;
+            color: var(--muted);
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 480px) {
+            .login-card { padding: 2rem 1.5rem; }
+            .brand-text { font-size: 1.12rem; }
+            .port-bg { opacity: 0.35; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─────────── Scène portuaire : grue + conteneurs + navire ─────────── -->
+<div class="port-bg" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#070a12"/>
+                <stop offset="60%" stop-color="#0b1020"/>
+                <stop offset="100%" stop-color="#0e1526"/>
+            </linearGradient>
+            <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#0b1a2e"/>
+                <stop offset="100%" stop-color="#050810"/>
+            </linearGradient>
+            <linearGradient id="crane" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2a3652"/>
+                <stop offset="100%" stop-color="#141c2e"/>
+            </linearGradient>
+            <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#1a2438"/>
+                <stop offset="100%" stop-color="#0a1020"/>
+            </linearGradient>
+        </defs>
+
+        <!-- Ciel -->
+        <rect width="1440" height="900" fill="url(#sky)"/>
+
+        <!-- Étoiles / lumières lointaines -->
+        <g fill="#8fa8d8" opacity="0.35">
+            <circle cx="120" cy="90"  r="1.4"/>
+            <circle cx="320" cy="60"  r="1"/>
+            <circle cx="560" cy="130" r="1.2"/>
+            <circle cx="880" cy="80"  r="1.1"/>
+            <circle cx="1120" cy="110" r="1.5"/>
+            <circle cx="1310" cy="70"  r="1"/>
+            <circle cx="240" cy="180" r="0.9"/>
+            <circle cx="740" cy="200" r="1.1"/>
+        </g>
+
+        <!-- ── MER (bas) ── -->
+        <rect x="0" y="640" width="1440" height="260" fill="url(#sea)"/>
+        <!-- reflets sur l'eau -->
+        <g stroke="#3fb6e8" stroke-width="1" opacity="0.12">
+            <line x1="60"  y1="700" x2="200" y2="700"/>
+            <line x1="300" y1="740" x2="500" y2="740"/>
+            <line x1="720" y1="710" x2="880" y2="710"/>
+            <line x1="1000" y1="760" x2="1200" y2="760"/>
+            <line x1="150" y1="800" x2="380" y2="800"/>
+            <line x1="820" y1="830" x2="1080" y2="830"/>
+        </g>
+
+        <!-- ── NAVIRE PORTE-CONTENEURS (droite) ── -->
+        <g transform="translate(880, 560)">
+            <!-- coque -->
+            <path d="M0 90 L500 90 L520 130 L-10 130 Z" fill="url(#hull)"/>
+            <!-- étrave -->
+            <path d="M500 90 L560 110 L520 130 Z" fill="#0d1524"/>
+            <!-- pont -->
+            <rect x="0" y="70" width="500" height="20" fill="#1a2438"/>
+            <!-- pile de conteneurs -->
+            <g>
+                <!-- rangée 1 -->
+                <rect x="20"  y="40" width="70" height="30" fill="#e5533d"/>
+                <rect x="100" y="40" width="70" height="30" fill="#f0b429"/>
+                <rect x="180" y="40" width="70" height="30" fill="#3fb6e8"/>
+                <rect x="260" y="40" width="70" height="30" fill="#e5533d"/>
+                <rect x="340" y="40" width="70" height="30" fill="#f0b429"/>
+                <!-- rangée 2 -->
+                <rect x="20"  y="10" width="70" height="30" fill="#3fb6e8"/>
+                <rect x="100" y="10" width="70" height="30" fill="#e5533d"/>
+                <rect x="180" y="10" width="70" height="30" fill="#f0b429"/>
+                <rect x="260" y="10" width="70" height="30" fill="#3fb6e8"/>
+                <!-- superstructure -->
+                <rect x="400" y="-20" width="60" height="90" fill="#2a3652"/>
+                <rect x="410" y="-10" width="10" height="8" fill="#f0b429" opacity="0.8"/>
+                <rect x="430" y="-10" width="10" height="8" fill="#f0b429" opacity="0.6"/>
+                <rect x="410" y="10"  width="10" height="8" fill="#3fb6e8" opacity="0.8"/>
+                <!-- cheminée -->
+                <rect x="425" y="-40" width="14" height="24" fill="#2a3652"/>
+            </g>
+        </g>
+
+        <!-- ── GRUE PORTUAIRE (gauche) ── -->
+        <g transform="translate(80, 180)" stroke="url(#crane)" stroke-width="8" fill="none" stroke-linecap="square">
+            <!-- mât vertical -->
+            <line x1="0"   y1="0"  x2="0"   y2="440"/>
+            <line x1="30"  y1="0"  x2="30"  y2="440"/>
+            <!-- renforts -->
+            <line x1="0"   y1="80"  x2="30" y2="120"/>
+            <line x1="30"  y1="80"  x2="0"  y2="120"/>
+            <line x1="0"   y1="200" x2="30" y2="240"/>
+            <line x1="30"  y1="200" x2="0"  y2="240"/>
+            <line x1="0"   y1="320" x2="30" y2="360"/>
+            <line x1="30"  y1="320" x2="0"  y2="360"/>
+        </g>
+        <!-- flèche horizontale de la grue -->
+        <g stroke="url(#crane)" stroke-width="8" stroke-linecap="square">
+            <line x1="80"  y1="180" x2="420" y2="180"/>
+            <line x1="80"  y1="200" x2="420" y2="200"/>
+            <line x1="380" y1="180" x2="420" y2="200"/>
+            <!-- câble + conteneur suspendu -->
+            <line x1="330" y1="200" x2="330" y2="300" stroke-width="2" stroke="#5a6580"/>
+            <rect x="305" y="300" width="50" height="26" fill="#f0b429" opacity="0.9"/>
+        </g>
+
+        <!-- conteneurs empilés au sol (quai gauche) -->
+        <g>
+            <rect x="150" y="620" width="60" height="24" fill="#e5533d"/>
+            <rect x="150" y="596" width="60" height="24" fill="#3fb6e8"/>
+            <rect x="220" y="620" width="60" height="24" fill="#f0b429"/>
+            <rect x="220" y="596" width="60" height="24" fill="#e5533d"/>
+            <rect x="220" y="572" width="60" height="24" fill="#3fb6e8"/>
+        </g>
+
+        <!-- ligne d'horizon du quai -->
+        <line x1="0" y1="644" x2="1440" y2="644" stroke="#1e2a44" stroke-width="2"/>
+    </svg>
+</div>
+
+<!-- halos -->
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- ─────────── Carte de connexion ─────────── -->
+<div class="login-wrapper">
+    <div class="login-card">
+
+        <!-- Brand -->
+        <div class="login-brand">
+            <div class="brand-icon">
+                <!-- icône ancre stylisée -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2a3 3 0 0 0-3 3c0 1.3.84 2.4 2 2.82V9H8v2h3v8.9A6 6 0 0 1 6.1 15H4.05A8 8 0 0 0 11 21.9V23h2v-1.1A8 8 0 0 0 19.95 15H17.9A6 6 0 0 1 13 19.9V11h3V9h-3V7.82A3 3 0 0 0 15 5a3 3 0 0 0-3-3zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="brand-text">TCN <span>Berth</span> Plan</div>
+                <div class="brand-sub">Gestion des postes d'amarrage</div>
+            </div>
+        </div>
+
+        <h2 class="login-title">Connexion</h2>
+        <p class="login-subtitle">Accédez au plan de quai et à la gestion des navires</p>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert-custom">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ message }}
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'login' %}" id="loginForm">
+            {% csrf_token %}
+
+            <div class="input-group-custom">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" name="username" placeholder="Nom d'utilisateur" required autocomplete="username">
+            </div>
+
+            <div class="input-group-custom">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" name="password" placeholder="Mot de passe" required autocomplete="current-password">
+            </div>
+
+            <div class="login-options">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">Se souvenir de moi</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-login" id="loginBtn">
+                <i class="fas fa-anchor"></i>
+                SE CONNECTER
+            </button>
+        </form>
+
+        <div class="login-footer">
+            TCN Berth Plan &copy; 2026 
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        const btn = document.getElementById('loginBtn');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Connexion...';
+        btn.disabled = true;
+    });
+</script>
+
+</body>
+</html>
