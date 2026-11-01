@@ -38,28 +38,50 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
+            /* laisse la place au navire sous la carte */
+            padding-bottom: clamp(120px, 24vh, 270px);
         }
 
         /* ── Scène portuaire de fond (SVG) ── */
-        .port-bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.55;
-        }
+        .port-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.7; }
         .port-bg svg { width: 100%; height: 100%; }
+
+        /* ── Animations du navire et de la grue ── */
+        .ship-sail { animation: sailIn 3.5s cubic-bezier(.22,1,.36,1) both; }
+        .ship-bob  { animation: bob 6s ease-in-out 3.5s infinite; transform-box: fill-box; transform-origin: center bottom; }
+        @keyframes sailIn { from { transform: translateX(560px); } to { transform: translateX(0); } }
+        @keyframes bob { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(3px) rotate(-0.35deg); } }
+        .ship-reflection { animation: shimmer 4s ease-in-out infinite; }
+        @keyframes shimmer { 0%,100% { opacity: .07; } 50% { opacity: .03; } }
+        .smoke { animation: smoke 5s ease-in-out infinite; transform-box: fill-box; transform-origin: left bottom; }
+        @keyframes smoke { 0%,100% { opacity: .22; transform: translate(0,0) scale(1); } 50% { opacity: .1; transform: translate(10px,-6px) scale(1.15); } }
+        .foam { stroke-dasharray: 6 4; animation: foam 1.6s linear infinite; }
+        @keyframes foam { to { stroke-dashoffset: -20; } }
+        .beacon { animation: beacon 1.6s steps(2) infinite; }
+        @keyframes beacon { 50% { opacity: 0.15; } }
+        .radar { animation: radar 2.4s linear infinite; transform-box: fill-box; transform-origin: center; }
+        @keyframes radar { 0% { transform: scaleX(1); } 50% { transform: scaleX(.2); } 100% { transform: scaleX(1); } }
+        .waves line { stroke-dasharray: 40 18; animation: waves 7s linear infinite; }
+        .waves line:nth-child(even) { animation-duration: 10s; animation-direction: reverse; }
+        @keyframes waves { to { stroke-dashoffset: -116; } }
+        .trolley { animation: trolley 12s ease-in-out infinite; }
+        @keyframes trolley { 0%,15% { transform: translateX(0); } 45%,60% { transform: translateX(60px); } 90%,100% { transform: translateX(0); } }
+        .hoist-box { animation: hoistBox 12s ease-in-out infinite; }
+        @keyframes hoistBox { 0%,15% { transform: translateY(0); } 25%,50% { transform: translateY(-45px); } 60%,100% { transform: translateY(0); } }
+        /* Navire centré en bas de l'écran, derrière la carte */
+        .hero-ship {
+            position: fixed; left: 50%; bottom: 2vh; transform: translateX(-50%);
+            width: clamp(340px, 46vw, 760px); z-index: 1; pointer-events: none;
+        }
+        .hero-ship svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
 
         /* Halo doré global */
         .bg-glow {
-            position: fixed;
-            width: 600px;
-            height: 600px;
-            border-radius: 50%;
+            position: fixed; width: 600px; height: 600px; border-radius: 50%;
             background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            opacity: 0.18;
-            pointer-events: none;
-            z-index: 0;
+            opacity: 0.18; pointer-events: none; z-index: 0;
         }
         .bg-glow-1 { top: -220px; right: -160px; }
         .bg-glow-2 { bottom: -240px; left: -180px; opacity: 0.10;
@@ -67,251 +89,84 @@
 
         /* Grain */
         body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0.035;
+            content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.035;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
             background-size: 200px 200px;
         }
 
         .login-wrapper {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            max-width: 440px;
-            padding: 0 1.5rem;
-            animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+            position: relative; z-index: 2; width: 100%; max-width: 440px; padding: 0 1.5rem;
+            animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.3s both;
         }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(28px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
 
         .login-card {
             background: linear-gradient(160deg, rgba(19,26,42,0.92), rgba(14,19,32,0.96));
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 2.5rem 2rem 2rem;
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            box-shadow:
-                0 30px 80px rgba(0,0,0,0.55),
-                inset 0 1px 0 rgba(255,255,255,0.04);
-            position: relative;
-            overflow: hidden;
+            border: 1px solid var(--border); border-radius: 18px; padding: 2.5rem 2rem 2rem;
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04);
+            position: relative; overflow: hidden;
         }
-
-        /* Fine ligne "quai" supérieure */
         .login-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg,
-                var(--accent-3) 0%,
-                var(--accent) 35%,
-                var(--accent-2) 100%);
-            opacity: 0.9;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--accent-3) 0%, var(--accent) 35%, var(--accent-2) 100%); opacity: 0.9;
         }
 
-        /* ── Brand ── */
-        .login-brand {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 1.75rem;
-        }
-
+        .login-brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 1.75rem; }
         .brand-icon {
-            width: 46px;
-            height: 46px;
-            background: linear-gradient(140deg, var(--accent), #d99a12);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            width: 46px; height: 46px; background: linear-gradient(140deg, var(--accent), #d99a12);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
             box-shadow: 0 8px 28px var(--accent-glow);
         }
-
-        .brand-icon svg {
-            width: 26px;
-            height: 26px;
-            fill: #070a12;
-        }
-
-        .brand-text {
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: 1.32rem;
-            color: var(--text);
-            letter-spacing: -0.025em;
-            line-height: 1.15;
-        }
+        .brand-icon svg { width: 26px; height: 26px; fill: #070a12; }
+        .brand-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.32rem; color: var(--text); letter-spacing: -0.025em; line-height: 1.15; }
         .brand-text span { color: var(--accent); }
 
-        .brand-sub {
-            font-size: 0.58rem;
-            font-weight: 400;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: var(--muted-light);
-            margin-top: 3px;
-        }
+        .login-title { text-align: center; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--text); margin-bottom: 1.5rem; letter-spacing: -0.02em; }
 
-        /* ── Titre ── */
-        .login-title {
-            text-align: center;
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--text);
-            margin-bottom: 0.35rem;
-            letter-spacing: -0.02em;
-        }
-
-        .login-subtitle {
-            text-align: center;
-            font-size: 0.82rem;
-            color: var(--muted-light);
-            margin-bottom: 1.8rem;
-        }
-
-        /* ── Alertes ── */
         .alert-custom {
-            background: rgba(229,83,61,0.10);
-            border: 1px solid rgba(229,83,61,0.30);
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            font-size: 0.85rem;
-            color: #f39a8c;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: rgba(229,83,61,0.10); border: 1px solid rgba(229,83,61,0.30); border-radius: 10px;
+            padding: 0.75rem 1rem; font-size: 0.85rem; color: #f39a8c; margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 8px;
         }
+        .alert-custom .btn-close { filter: invert(0.7); margin-left: auto; padding: 0; font-size: 0.7rem; }
 
-        .alert-custom .btn-close {
-            filter: invert(0.7);
-            margin-left: auto;
-            padding: 0;
-            font-size: 0.7rem;
-        }
-
-        /* ── Champs ── */
-        .input-group-custom {
-            position: relative;
-            margin-bottom: 1.25rem;
-        }
-
+        .input-group-custom { position: relative; margin-bottom: 1.25rem; }
         .input-group-custom .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted);
-            font-size: 0.85rem;
-            pointer-events: none;
-            transition: color 0.2s;
-            z-index: 2;
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: var(--muted); font-size: 0.85rem; pointer-events: none; transition: color 0.2s; z-index: 2;
         }
-
         .input-group-custom input {
-            width: 100%;
-            background: rgba(255,255,255,0.035);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0.85rem 1rem 0.85rem 2.6rem;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.92rem;
-            color: var(--text);
+            width: 100%; background: rgba(255,255,255,0.035); border: 1px solid var(--border); border-radius: 10px;
+            padding: 0.85rem 1rem 0.85rem 2.6rem; font-family: 'DM Sans', sans-serif; font-size: 0.92rem; color: var(--text);
             transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
-
         .input-group-custom input::placeholder { color: var(--muted); }
-
-        .input-group-custom input:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: rgba(240,180,41,0.05);
-            box-shadow: 0 0 0 3px rgba(240,180,41,0.14);
-        }
-
+        .input-group-custom input:focus { outline: none; border-color: var(--accent); background: rgba(240,180,41,0.05); box-shadow: 0 0 0 3px rgba(240,180,41,0.14); }
         .input-group-custom input:focus ~ .input-icon { color: var(--accent); }
 
-        /* ── Options ── */
-        .login-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            font-size: 0.82rem;
-        }
+        .login-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; font-size: 0.82rem; }
+        .form-check-input { background-color: transparent; border-color: var(--muted); }
+        .form-check-input:checked { background-color: var(--accent); border-color: var(--accent); }
+        .form-check-label { color: var(--muted-light); font-size: 0.82rem; margin-left: 4px; }
 
-        .form-check-input:checked {
-            background-color: var(--accent);
-            border-color: var(--accent);
-        }
-
-        .form-check-label {
-            color: var(--muted-light);
-            font-size: 0.82rem;
-            margin-left: 4px;
-        }
-
-        /* ── Bouton ── */
         .btn-login {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            background: linear-gradient(135deg, var(--accent), #d99a12);
-            color: #070a12;
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: 0.88rem;
-            letter-spacing: 0.05em;
-            border: none;
-            border-radius: 10px;
-            padding: 0.88rem;
-            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+            background: linear-gradient(135deg, var(--accent), #d99a12); color: #070a12;
+            font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; letter-spacing: 0.05em;
+            border: none; border-radius: 10px; padding: 0.88rem; cursor: pointer;
             transition: opacity 0.18s, box-shadow 0.18s, transform 0.18s;
         }
+        .btn-login:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 10px 34px var(--accent-glow); color: #070a12; }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .btn-login:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-            box-shadow: 0 10px 34px var(--accent-glow);
-            color: #070a12;
-        }
-
-        .btn-login:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* ── Footer ── */
-        .login-footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.70rem;
-            color: var(--muted);
-            letter-spacing: 0.10em;
-            text-transform: uppercase;
-        }
+        .login-footer { text-align: center; margin-top: 1.5rem; font-size: 0.70rem; color: var(--muted); letter-spacing: 0.10em; text-transform: uppercase; }
 
         @media (max-width: 480px) {
             .login-card { padding: 2rem 1.5rem; }
             .brand-text { font-size: 1.12rem; }
-            .port-bg { opacity: 0.35; }
+            .port-bg { opacity: 0.4; }
+            .hero-ship { width: 94vw; }
         }
     </style>
 </head>
@@ -319,119 +174,347 @@
 
 <!-- ─────────── Scène portuaire : grue + conteneurs + navire ─────────── -->
 <div class="port-bg" aria-hidden="true">
-    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stop-color="#070a12"/>
-                <stop offset="60%" stop-color="#0b1020"/>
-                <stop offset="100%" stop-color="#0e1526"/>
+                <stop offset="0%"  stop-color="#070a12"/><stop offset="60%" stop-color="#0b1020"/><stop offset="100%" stop-color="#0e1526"/>
             </linearGradient>
             <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stop-color="#0b1a2e"/>
-                <stop offset="100%" stop-color="#050810"/>
+                <stop offset="0%"  stop-color="#0b1a2e"/><stop offset="100%" stop-color="#050810"/>
             </linearGradient>
             <linearGradient id="crane" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#2a3652"/>
-                <stop offset="100%" stop-color="#141c2e"/>
-            </linearGradient>
-            <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stop-color="#1a2438"/>
-                <stop offset="100%" stop-color="#0a1020"/>
+                <stop offset="0%" stop-color="#2a3652"/><stop offset="100%" stop-color="#141c2e"/>
             </linearGradient>
         </defs>
 
         <!-- Ciel -->
         <rect width="1440" height="900" fill="url(#sky)"/>
-
-        <!-- Étoiles / lumières lointaines -->
         <g fill="#8fa8d8" opacity="0.35">
-            <circle cx="120" cy="90"  r="1.4"/>
-            <circle cx="320" cy="60"  r="1"/>
-            <circle cx="560" cy="130" r="1.2"/>
-            <circle cx="880" cy="80"  r="1.1"/>
-            <circle cx="1120" cy="110" r="1.5"/>
-            <circle cx="1310" cy="70"  r="1"/>
-            <circle cx="240" cy="180" r="0.9"/>
-            <circle cx="740" cy="200" r="1.1"/>
+            <circle cx="120" cy="90" r="1.4"/><circle cx="320" cy="60" r="1"/><circle cx="560" cy="130" r="1.2"/>
+            <circle cx="880" cy="80" r="1.1"/><circle cx="1120" cy="110" r="1.5"/><circle cx="1310" cy="70" r="1"/>
+            <circle cx="240" cy="180" r="0.9"/><circle cx="740" cy="200" r="1.1"/>
         </g>
 
-        <!-- ── MER (bas) ── -->
+        <!-- Mer -->
         <rect x="0" y="640" width="1440" height="260" fill="url(#sea)"/>
-        <!-- reflets sur l'eau -->
-        <g stroke="#3fb6e8" stroke-width="1" opacity="0.12">
-            <line x1="60"  y1="700" x2="200" y2="700"/>
-            <line x1="300" y1="740" x2="500" y2="740"/>
-            <line x1="720" y1="710" x2="880" y2="710"/>
-            <line x1="1000" y1="760" x2="1200" y2="760"/>
-            <line x1="150" y1="800" x2="380" y2="800"/>
-            <line x1="820" y1="830" x2="1080" y2="830"/>
+        <g class="waves" stroke="#3fb6e8" stroke-width="1" opacity="0.14">
+            <line x1="60" y1="700" x2="260" y2="700"/><line x1="300" y1="740" x2="560" y2="740"/>
+            <line x1="680" y1="712" x2="900" y2="712"/><line x1="980" y1="760" x2="1260" y2="760"/>
+            <line x1="120" y1="800" x2="420" y2="800"/><line x1="760" y1="830" x2="1100" y2="830"/>
+            <line x1="460" y1="860" x2="700" y2="860"/>
         </g>
 
-        <!-- ── NAVIRE PORTE-CONTENEURS (droite) ── -->
-        <g transform="translate(880, 560)">
-            <!-- coque -->
-            <path d="M0 90 L500 90 L520 130 L-10 130 Z" fill="url(#hull)"/>
-            <!-- étrave -->
-            <path d="M500 90 L560 110 L520 130 Z" fill="#0d1524"/>
-            <!-- pont -->
-            <rect x="0" y="70" width="500" height="20" fill="#1a2438"/>
-            <!-- pile de conteneurs -->
-            <g>
-                <!-- rangée 1 -->
-                <rect x="20"  y="40" width="70" height="30" fill="#e5533d"/>
-                <rect x="100" y="40" width="70" height="30" fill="#f0b429"/>
-                <rect x="180" y="40" width="70" height="30" fill="#3fb6e8"/>
-                <rect x="260" y="40" width="70" height="30" fill="#e5533d"/>
-                <rect x="340" y="40" width="70" height="30" fill="#f0b429"/>
-                <!-- rangée 2 -->
-                <rect x="20"  y="10" width="70" height="30" fill="#3fb6e8"/>
-                <rect x="100" y="10" width="70" height="30" fill="#e5533d"/>
-                <rect x="180" y="10" width="70" height="30" fill="#f0b429"/>
-                <rect x="260" y="10" width="70" height="30" fill="#3fb6e8"/>
-                <!-- superstructure -->
-                <rect x="400" y="-20" width="60" height="90" fill="#2a3652"/>
-                <rect x="410" y="-10" width="10" height="8" fill="#f0b429" opacity="0.8"/>
-                <rect x="430" y="-10" width="10" height="8" fill="#f0b429" opacity="0.6"/>
-                <rect x="410" y="10"  width="10" height="8" fill="#3fb6e8" opacity="0.8"/>
-                <!-- cheminée -->
-                <rect x="425" y="-40" width="14" height="24" fill="#2a3652"/>
-            </g>
-        </g>
-
-        <!-- ── GRUE PORTUAIRE (gauche) ── -->
+        <!-- ── Grue portuaire (gauche) ── -->
         <g transform="translate(80, 180)" stroke="url(#crane)" stroke-width="8" fill="none" stroke-linecap="square">
-            <!-- mât vertical -->
-            <line x1="0"   y1="0"  x2="0"   y2="440"/>
-            <line x1="30"  y1="0"  x2="30"  y2="440"/>
-            <!-- renforts -->
-            <line x1="0"   y1="80"  x2="30" y2="120"/>
-            <line x1="30"  y1="80"  x2="0"  y2="120"/>
-            <line x1="0"   y1="200" x2="30" y2="240"/>
-            <line x1="30"  y1="200" x2="0"  y2="240"/>
-            <line x1="0"   y1="320" x2="30" y2="360"/>
-            <line x1="30"  y1="320" x2="0"  y2="360"/>
+            <line x1="0" y1="0" x2="0" y2="440"/><line x1="30" y1="0" x2="30" y2="440"/>
+            <line x1="0" y1="80" x2="30" y2="120"/><line x1="30" y1="80" x2="0" y2="120"/>
+            <line x1="0" y1="200" x2="30" y2="240"/><line x1="30" y1="200" x2="0" y2="240"/>
+            <line x1="0" y1="320" x2="30" y2="360"/><line x1="30" y1="320" x2="0" y2="360"/>
         </g>
-        <!-- flèche horizontale de la grue -->
         <g stroke="url(#crane)" stroke-width="8" stroke-linecap="square">
-            <line x1="80"  y1="180" x2="420" y2="180"/>
-            <line x1="80"  y1="200" x2="420" y2="200"/>
-            <line x1="380" y1="180" x2="420" y2="200"/>
-            <!-- câble + conteneur suspendu -->
-            <line x1="330" y1="200" x2="330" y2="300" stroke-width="2" stroke="#5a6580"/>
-            <rect x="305" y="300" width="50" height="26" fill="#f0b429" opacity="0.9"/>
+            <line x1="80" y1="180" x2="440" y2="180"/><line x1="80" y1="200" x2="440" y2="200"/>
+            <line x1="400" y1="180" x2="440" y2="200"/>
+        </g>
+        <circle class="beacon" cx="440" cy="176" r="3" fill="#e5533d"/>
+        <g class="trolley">
+            <rect x="318" y="196" width="24" height="10" fill="#2a3652"/>
+            <line x1="330" y1="206" x2="330" y2="300" stroke="#5a6580" stroke-width="2"/>
+            <g class="hoist-box"><rect x="312" y="300" width="36" height="5" rx="1" fill="#5a6580"/></g>
         </g>
 
-        <!-- conteneurs empilés au sol (quai gauche) -->
-        <g>
-            <rect x="150" y="620" width="60" height="24" fill="#e5533d"/>
-            <rect x="150" y="596" width="60" height="24" fill="#3fb6e8"/>
-            <rect x="220" y="620" width="60" height="24" fill="#f0b429"/>
-            <rect x="220" y="596" width="60" height="24" fill="#e5533d"/>
-            <rect x="220" y="572" width="60" height="24" fill="#3fb6e8"/>
-        </g>
+        <!-- Bord du quai -->
+        <rect x="0" y="644" width="460" height="8" fill="#1a2236"/>
+    </svg>
+</div>
 
-        <!-- ligne d'horizon du quai -->
-        <line x1="0" y1="644" x2="1440" y2="644" stroke="#1e2a44" stroke-width="2"/>
+
+<!-- ─────────── Porte-conteneurs, centré sous la carte ─────────── -->
+<div class="hero-ship" aria-hidden="true">
+    <svg viewBox="-20 -72 680 300" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="hullGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#24345e"/><stop offset="1" stop-color="#0f1730"/></linearGradient>
+<linearGradient id="antifoulGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c2412f"/><stop offset="1" stop-color="#5e1a13"/></linearGradient>
+<linearGradient id="houseGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4f6fa"/><stop offset="1" stop-color="#c9d2e3"/></linearGradient>
+<linearGradient id="reflectGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fb6e8" stop-opacity="0"/><stop offset="1" stop-color="#3fb6e8" stop-opacity=".9"/></linearGradient>
+<pattern id="ribs" width="3" height="10" patternUnits="userSpaceOnUse"><rect width="1" height="10" fill="#000" opacity=".22"/></pattern></defs>
+        <g class="ship-sail">
+          <g class="ship-bob">
+            <g>
+              <g class="ship-reflection" opacity="0.18" transform="translate(0 346) scale(1 -1)"><path d="M0 96 L570 96 Q612.0 96 640 84 L601.5 150 L18 170 Q4 170 2 150 Z" fill="url(#reflectGrad)"/></g>
+              <clipPath id="hullClip"><path d="M0 96 L570 96 Q612.0 96 640 84 L601.5 150 Q634.4 154 628.8 163 Q619.0 170 585.4 170 L26 170 Q6 170 4 150 L0 96 Z"/></clipPath>
+              <g clip-path="url(#hullClip)">
+              <rect x="-10" y="74" width="660" height="106" fill="url(#hullGrad)"/>
+              <rect x="-10" y="74" width="660" height="30" fill="#f0b429"/>
+              <rect x="-10" y="148" width="660" height="4" fill="#e8edf5" opacity=".9"/>
+              <rect x="-10" y="152" width="660" height="30" fill="url(#antifoulGrad)"/>
+              </g>
+              <path d="M0 96 L570 96 Q612.0 96 640 84 L601.5 150 Q634.4 154 628.8 163 Q619.0 170 585.4 170 L26 170 Q6 170 4 150 L0 96 Z" fill="none" stroke="rgba(232,237,245,.25)" stroke-width="1.2"/>
+              <circle cx="564" cy="110" r="3.5" fill="#0a1020" stroke="#5a6580"/>
+              <text x="400" y="132" text-anchor="end" font-family="Syne, sans-serif" font-weight="800" font-size="18" letter-spacing="4" fill="#e8edf5" opacity=".85">TCN</text>
+              <rect x="22" y="8" width="62" height="88" rx="2" fill="url(#houseGrad)"/>
+              <rect x="12" y="8" width="82" height="6" rx="2" fill="#f4f6fa"/>
+              <rect x="26" y="16" width="54" height="7" rx="1" fill="#0f1730"/>
+              <rect x="29.0" y="17.5" width="5" height="4" fill="#f0b429" opacity="0.95"/>
+              <rect x="37.6" y="17.5" width="5" height="4" fill="#f0b429" opacity="0.55"/>
+              <rect x="46.2" y="17.5" width="5" height="4" fill="#f0b429" opacity="0.95"/>
+              <rect x="54.8" y="17.5" width="5" height="4" fill="#f0b429" opacity="0.55"/>
+              <rect x="63.4" y="17.5" width="5" height="4" fill="#f0b429" opacity="0.95"/>
+              <rect x="72.0" y="17.5" width="5" height="4" fill="#f0b429" opacity="0.55"/>
+              <rect x="28.0" y="30" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="35.6" y="30" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="43.2" y="30" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="50.8" y="30" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="58.4" y="30" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="66.0" y="30" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="73.6" y="30" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="28.0" y="39" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="35.6" y="39" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="43.2" y="39" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="50.8" y="39" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="58.4" y="39" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="66.0" y="39" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="73.6" y="39" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="28.0" y="48" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="35.6" y="48" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="43.2" y="48" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="50.8" y="48" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="58.4" y="48" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="66.0" y="48" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="73.6" y="48" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="28.0" y="57" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="35.6" y="57" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="43.2" y="57" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="50.8" y="57" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="58.4" y="57" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="66.0" y="57" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="73.6" y="57" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="28.0" y="66" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="35.6" y="66" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="43.2" y="66" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="50.8" y="66" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="58.4" y="66" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="66.0" y="66" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="73.6" y="66" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="28.0" y="75" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="35.6" y="75" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="43.2" y="75" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="50.8" y="75" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="58.4" y="75" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="66.0" y="75" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="73.6" y="75" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="28.0" y="84" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="35.6" y="84" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="43.2" y="84" width="4.2" height="3.4" fill="#f6d17a"/>
+              <rect x="50.8" y="84" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="58.4" y="84" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="66.0" y="84" width="4.2" height="3.4" fill="#1a2438"/>
+              <rect x="73.6" y="84" width="4.2" height="3.4" fill="#1a2438"/>
+              <line x1="40" y1="8" x2="40" y2="-18" stroke="#c9d2e3" stroke-width="2"/>
+              <line x1="31" y1="-11" x2="49" y2="-11" stroke="#c9d2e3" stroke-width="2"/>
+              <rect class="radar" x="33" y="-21" width="14" height="3" rx="1.5" fill="#e8edf5"/>
+              <circle class="beacon" cx="40" cy="-23" r="2.6" fill="#e5533d"/>
+              <path d="M58 8 L61 -22 L78 -22 L78 8 Z" fill="#e5533d"/>
+              <rect x="61" y="-22" width="17" height="5" fill="#070a12"/>
+              <rect x="60" y="-10" width="18" height="4" fill="#f4f6fa"/>
+              <g class="smoke" opacity=".25"><circle cx="70" cy="-30" r="6" fill="#8b96ad"/><circle cx="78" cy="-40" r="8" fill="#8b96ad"/><circle cx="90" cy="-50" r="10" fill="#8b96ad"/></g>
+              <rect x="92" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="94" y="77" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="94" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="94" y="61" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="94" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="94" y="45" width="21" height="15" rx="1" fill="#b5562b"/>
+              <rect x="94" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="94" y="29" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="94" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="94" y="13" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="94" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="116" y="77" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="116" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="116" y="61" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="116" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="116" y="45" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="116" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="116" y="29" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="116" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="116" y="13" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="116" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="138.5" y1="93" x2="138.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="139" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="141" y="77" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="141" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="141" y="61" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="141" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="141" y="45" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="141" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="141" y="29" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="141" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="141" y="13" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="141" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="163" y="77" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="163" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="163" y="61" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="163" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="163" y="45" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="163" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="163" y="29" width="21" height="15" rx="1" fill="#f58220"/>
+              <rect x="163" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="163" y="13" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="163" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="185.5" y1="93" x2="185.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="186" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="188" y="77" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="188" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="188" y="61" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="188" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="188" y="45" width="21" height="15" rx="1" fill="#f58220"/>
+              <rect x="188" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="188" y="29" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="188" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="188" y="13" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="188" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="210" y="77" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="210" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="210" y="61" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="210" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="210" y="45" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="210" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="210" y="29" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="210" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="210" y="13" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="210" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="232.5" y1="93" x2="232.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="233" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="235" y="77" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="235" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="235" y="61" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="235" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="235" y="45" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="235" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="235" y="29" width="21" height="15" rx="1" fill="#2ec4a6"/>
+              <rect x="235" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="257" y="77" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="257" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="257" y="61" width="21" height="15" rx="1" fill="#2ec4a6"/>
+              <rect x="257" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="257" y="45" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="257" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="257" y="29" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="257" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="257" y="13" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="257" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="279.5" y1="93" x2="279.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="280" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="282" y="77" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="282" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="282" y="61" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="282" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="282" y="45" width="21" height="15" rx="1" fill="#b5562b"/>
+              <rect x="282" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="282" y="29" width="21" height="15" rx="1" fill="#f58220"/>
+              <rect x="282" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="304" y="77" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="304" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="304" y="61" width="21" height="15" rx="1" fill="#b5562b"/>
+              <rect x="304" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="304" y="45" width="21" height="15" rx="1" fill="#f58220"/>
+              <rect x="304" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="304" y="29" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="304" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="304" y="13" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="304" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="326.5" y1="93" x2="326.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="327" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="329" y="77" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="329" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="329" y="61" width="21" height="15" rx="1" fill="#2ec4a6"/>
+              <rect x="329" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="329" y="45" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="329" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="329" y="29" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="329" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="329" y="13" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="329" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="351" y="77" width="21" height="15" rx="1" fill="#2ec4a6"/>
+              <rect x="351" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="351" y="61" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="351" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="351" y="45" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="351" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="351" y="29" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="351" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="373.5" y1="93" x2="373.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="374" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="376" y="77" width="21" height="15" rx="1" fill="#f58220"/>
+              <rect x="376" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="376" y="61" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="376" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="376" y="45" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="376" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="376" y="29" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="376" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="398" y="77" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="398" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="398" y="61" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="398" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="398" y="45" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="398" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="398" y="29" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="398" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="398" y="13" width="21" height="15" rx="1" fill="#b5562b"/>
+              <rect x="398" y="13" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="420.5" y1="93" x2="420.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="421" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="423" y="77" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="423" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="423" y="61" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="423" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="423" y="45" width="21" height="15" rx="1" fill="#b5562b"/>
+              <rect x="423" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="423" y="29" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="423" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="445" y="77" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="445" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="445" y="61" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="445" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="445" y="45" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="445" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="445" y="29" width="21" height="15" rx="1" fill="#d9dee8"/>
+              <rect x="445" y="29" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="467.5" y1="93" x2="467.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="468" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="470" y="77" width="21" height="15" rx="1" fill="#f0b429"/>
+              <rect x="470" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="470" y="61" width="21" height="15" rx="1" fill="#2ec4a6"/>
+              <rect x="470" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="470" y="45" width="21" height="15" rx="1" fill="#6c7a96"/>
+              <rect x="470" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="492" y="77" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="492" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="492" y="61" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="492" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="492" y="45" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="492" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="514.5" y1="93" x2="514.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <rect x="515" y="93" width="47" height="3" fill="#3a4766"/>
+              <rect x="517" y="77" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="517" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="517" y="61" width="21" height="15" rx="1" fill="#3fb6e8"/>
+              <rect x="517" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="517" y="45" width="21" height="15" rx="1" fill="#b5562b"/>
+              <rect x="517" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="539" y="77" width="21" height="15" rx="1" fill="#42b0d5"/>
+              <rect x="539" y="77" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="539" y="61" width="21" height="15" rx="1" fill="#2f78c4"/>
+              <rect x="539" y="61" width="21" height="15" fill="url(#ribs)"/>
+              <rect x="539" y="45" width="21" height="15" rx="1" fill="#e5533d"/>
+              <rect x="539" y="45" width="21" height="15" fill="url(#ribs)"/>
+              <line x1="561.5" y1="93" x2="561.5" y2="13" stroke="#2a3652" stroke-width="1.5" opacity=".7"/>
+              <path d="M564 96 L564 86 L626 76 L640 84 Z" fill="#1d2a48"/>
+              <line x1="601.5" y1="78" x2="601.5" y2="38" stroke="#c9d2e3" stroke-width="2"/>
+              <circle class="beacon" cx="601.5" cy="36" r="3" fill="#f0b429"/>
+              <path class="foam" d="M596.6 151 q8 -5 16 0 t16 0 t16 0" fill="none" stroke="#e8edf5" stroke-width="1.6" opacity=".55"/>
+            </g>
+          </g>
+        </g>
     </svg>
 </div>
 
@@ -443,50 +526,46 @@
 <div class="login-wrapper">
     <div class="login-card">
 
-        <!-- Brand -->
         <div class="login-brand">
             <div class="brand-icon">
-                <!-- icône ancre stylisée -->
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path d="M12 2a3 3 0 0 0-3 3c0 1.3.84 2.4 2 2.82V9H8v2h3v8.9A6 6 0 0 1 6.1 15H4.05A8 8 0 0 0 11 21.9V23h2v-1.1A8 8 0 0 0 19.95 15H17.9A6 6 0 0 1 13 19.9V11h3V9h-3V7.82A3 3 0 0 0 15 5a3 3 0 0 0-3-3zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
                 </svg>
             </div>
             <div>
                 <div class="brand-text">TCN <span>Berth</span> Plan</div>
-                <div class="brand-sub">Gestion des postes d'amarrage</div>
             </div>
         </div>
 
         <h2 class="login-title">Connexion</h2>
-        <p class="login-subtitle">Accédez au plan de quai et à la gestion des navires</p>
 
-        <!-- Messages -->
         {% if messages %}
             {% for message in messages %}
-            <div class="alert-custom">
+            <div class="alert-custom" role="alert">
                 <i class="fas fa-exclamation-triangle"></i>
                 {{ message }}
-                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+                <button type="button" class="btn-close" aria-label="Fermer" onclick="this.parentElement.remove()"></button>
             </div>
             {% endfor %}
         {% endif %}
 
         <form method="POST" action="{% url 'login' %}" id="loginForm">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
 
             <div class="input-group-custom">
+                <input type="text" name="username" placeholder="Nom d'utilisateur" required autocomplete="username" aria-label="Nom d'utilisateur">
                 <i class="fas fa-user input-icon"></i>
-                <input type="text" name="username" placeholder="Nom d'utilisateur" required autocomplete="username">
             </div>
 
             <div class="input-group-custom">
+                <input type="password" name="password" placeholder="Mot de passe" required autocomplete="current-password" aria-label="Mot de passe">
                 <i class="fas fa-lock input-icon"></i>
-                <input type="password" name="password" placeholder="Mot de passe" required autocomplete="current-password">
             </div>
 
             <div class="login-options">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                    <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me" value="1">
                     <label class="form-check-label" for="rememberMe">Se souvenir de moi</label>
                 </div>
             </div>
@@ -497,15 +576,12 @@
             </button>
         </form>
 
-        <div class="login-footer">
-            TCN Berth Plan &copy; 2026 
-        </div>
-
+        <div class="login-footer">TCN Berth Plan &copy; 2026</div>
     </div>
 </div>
 
 <script>
-    document.getElementById('loginForm').addEventListener('submit', function() {
+    document.getElementById('loginForm').addEventListener('submit', function () {
         const btn = document.getElementById('loginBtn');
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Connexion...';
         btn.disabled = true;

@@ -4,8 +4,10 @@ from decimal import Decimal
 from django import forms
 from django.utils import timezone
 
+from django.forms import BaseInlineFormSet, inlineformset_factory
+
 from .models import (
-    Bollard, ShippingLine, Vessel, VesselCall, get_quay, user_line, validate_imo,
+    Bollard, QuayConfig, ShippingLine, Vessel, VesselCall, get_quay, user_line, validate_imo,
 )
 from .scheduler import find_working_conflict
 
@@ -186,3 +188,72 @@ class VesselCallForm(forms.Form):
         call.planned_end = call.planned_end or cd["etd"]
         call.save()
         return call
+
+
+# ─────────────────────────────────────────────────────────────
+#  Paramétrage du quai et des bollards
+# ─────────────────────────────────────────────────────────────
+class QuaySettingsForm(forms.ModelForm):
+    nb_bollards = forms.IntegerField(
+        label="Nombre de bollards", min_value=2, max_value=300,
+        help_text="Utilisé par le bouton « Générer » : bollards répartis uniformément sur le quai.",
+    )
+
+    class Meta:
+        model = QuayConfig
+        fields = ["name", "length_m", "start_m", "max_draft_m", "bollard_prefix"]
+        labels = {
+            "name": "Nom du quai",
+            "length_m": "Longueur du quai (m)",
+            "start_m": "Métrage de départ (m)",
+            "max_draft_m": "Tirant d'eau maximum (m)",
+            "bollard_prefix": "Préfixe des bollards",
+        }
+        widgets = {
+            "length_m": forms.NumberInput(attrs={"step": "0.5"}),
+            "start_m": forms.NumberInput(attrs={"step": "0.5"}),
+            "max_draft_m": forms.NumberInput(attrs={"step": "0.1"}),
+        }
+
+    def clean_length_m(self):
+        length = self.cleaned_data["length_m"]
+        if length < 50:
+            raise forms.ValidationError("Le quai doit mesurer au moins 50 m.")
+        return length
+
+    def clean_max_draft_m(self):
+        draft = self.cleaned_data["max_draft_m"]
+        if not (Decimal("2") <= draft <= Decimal("30")):
+            raise forms.ValidationError("Valeur attendue entre 2 et 30 m.")
+        return draft
+
+
+class BaseBollardFormSet(BaseInlineFormSet):
+    quay_length = None  # renseigné par la vue avec la longueur saisie
+
+    def clean(self):
+        super().clean()
+        names, positions = set(), set()
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data") or not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+            name = (form.cleaned_data.get("name") or "").strip().upper()
+            pos = form.cleaned_data.get("position_m")
+            if name in names:
+                form.add_error("name", "Nom déjà utilisé.")
+            if pos is not None:
+                if self.quay_length is not None and pos > self.quay_length:
+                    form.add_error("position_m", f"Au-delà du quai ({self.quay_length} m).")
+                if pos in positions:
+                    form.add_error("position_m", "Position déjà occupée.")
+                positions.add(pos)
+            names.add(name)
+            form.cleaned_data["name"] = name
+            form.instance.name = name
+
+
+BollardFormSet = inlineformset_factory(
+    QuayConfig, Bollard, formset=BaseBollardFormSet,
+    fields=["name", "position_m"], extra=0, can_delete=True,
+    widgets={"position_m": forms.NumberInput(attrs={"step": "0.5"})},
+)

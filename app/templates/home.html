@@ -202,12 +202,16 @@ h1, h2, h3 { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; margin: 0
 .bp-timeaxis { position: sticky; left: 0; z-index: 6; background: var(--panel); border-right: 1px solid var(--border-2); }
 .bp-dayaxis { position: absolute; left: 0; right: 0; border-bottom: 1px solid var(--border-2); box-shadow: inset 3px 0 0 var(--line); }
 .bp-dayaxis.is-today { background: rgba(240,180,41,.06); }
-.bp-dayaxis-label { position: sticky; top: 78px; z-index: 1; margin-left: 3px; padding: .45rem .6rem .45rem .7rem; display: flex; flex-direction: column; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--border); }
-.bp-dayaxis.is-today .bp-dayaxis-label { background: #15192a; }
-.bp-dayaxis-label b { font-size: .84rem; font-weight: 500; color: var(--text); }
-.bp-dayaxis-label span { font-size: .7rem; color: var(--line); display: flex; align-items: center; gap: 5px; }
+.bp-dayaxis-label {
+    position: sticky; top: 78px; z-index: 1; width: 66px; margin-left: 3px;
+    padding: .45rem .3rem .45rem .6rem; display: flex; flex-direction: column; gap: 1px;
+}
+.bp-dayaxis-label b { font-size: .82rem; font-weight: 500; color: var(--text); line-height: 1.2; }
+.bp-dayaxis-label b:first-child { color: var(--muted-light); font-size: .74rem; }
+.bp-dayaxis-label span { margin-top: 4px; font-size: .7rem; font-weight: 500; color: var(--line); display: flex; align-items: center; gap: 5px; }
 .bp-dayaxis-label span i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
-.bp-htick { position: absolute; right: 8px; transform: translateY(-50%); font-size: .66rem; color: var(--muted); }
+.bp-htick { position: absolute; right: 8px; transform: translateY(-50%); font-size: .66rem; color: var(--muted-light); font-variant-numeric: tabular-nums; }
+.bp-htick.is-midnight { color: var(--text); font-weight: 600; }
 .bp-now-tag {
     position: absolute; right: 4px; transform: translateY(-50%); z-index: 2;
     background: var(--accent-3); color: #fff; font-size: .68rem; font-weight: 500; padding: 1px 6px; border-radius: 4px;
@@ -232,28 +236,15 @@ h1, h2, h3 { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; margin: 0
 .bp-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--accent-3); z-index: 8; box-shadow: 0 0 12px rgba(229,83,61,.6); pointer-events: none; }
 
 /* Fantôme : ETA demandé quand le navire a été décalé */
-.bp-ghost {
-    position: absolute; border: 1.5px dashed color-mix(in srgb, var(--line) 70%, transparent); border-radius: 8px;
-    background: color-mix(in srgb, var(--line) 5%, transparent); z-index: 2; padding: 4px 8px; font-size: .7rem; color: var(--muted-light); overflow: hidden;
-}
-.bp-shift { position: absolute; width: 0; border-left: 1.5px dashed var(--accent); z-index: 3; }
-.bp-shift::after {
-    content: ''; position: absolute; bottom: -1px; left: -6px;
-    border-top: 8px solid var(--accent); border-left: 5px solid transparent; border-right: 5px solid transparent;
-}
-.bp-shift span {
-    position: absolute; top: 50%; left: 6px; transform: translateY(-50%); font-size: .68rem; color: var(--accent);
-    background: var(--water-1); padding: 0 5px; white-space: nowrap; border-radius: 4px;
-}
-
 /* Navire */
 .bp-vessel { position: absolute; z-index: 4; cursor: pointer; transition: transform .18s, filter .18s; }
 .bp-vessel:hover, .bp-vessel:focus-visible { filter: drop-shadow(0 8px 20px color-mix(in srgb, var(--line) 45%, transparent)); z-index: 7; }
-.bp-occ {
-    position: absolute; inset: 0; border-radius: 6px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--line) 22%, transparent), color-mix(in srgb, var(--line) 8%, transparent));
-    border: 1px solid color-mix(in srgb, var(--line) 55%, transparent); border-top-width: 2px;
+/* Séjour à quai : simple trait à l'arrière du navire jusqu'au départ (pas de cadre) */
+.bp-stay {
+    position: absolute; left: 6px; bottom: 0; width: 2px; border-radius: 2px; pointer-events: none;
+    background: linear-gradient(180deg, var(--line), color-mix(in srgb, var(--line) 25%, transparent));
 }
+.bp-stay::after { content: ''; position: absolute; left: -3px; bottom: 0; width: 8px; height: 2px; background: var(--line); border-radius: 2px; }
 .bp-ship { position: relative; display: block; overflow: visible; }
 .bp-label {
     position: absolute; left: 13%; right: 16%; display: flex; flex-direction: column; justify-content: center;
@@ -262,18 +253,25 @@ h1, h2, h3 { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; margin: 0
 .bp-label b { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .8rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bp-label span { font-size: .68rem; color: #d6deee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bp-info {
-    position: absolute; left: 8px; right: 8px; display: flex; flex-direction: column; gap: 2px;
+    position: absolute; left: 16px; right: 8px; display: flex; flex-direction: column; gap: 2px;
     font-size: .7rem; color: #c9d4ea; overflow: hidden; pointer-events: none;
 }
 .bp-info b { font-family: 'Syne', sans-serif; font-size: .78rem; color: #fff; }
 .bp-info span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bp-info i { color: var(--line); width: 12px; }
-.bp-badges { position: absolute; right: 4px; top: 3px; display: flex; gap: 4px; pointer-events: none; z-index: 2; }
+/* Bandeau des heures au-dessus de chaque navire */
+.bp-time {
+    display: flex; align-items: center; gap: 6px; padding: 0 2px 0 4px; overflow: hidden; pointer-events: none;
+    font-size: .68rem; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums;
+    border-left: 2px solid var(--line);
+}
+.bp-time .t { overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+.bp-badges { margin-left: auto; display: flex; gap: 4px; flex: none; }
 .bp-badge { font-size: .62rem; font-weight: 500; padding: 1px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
 .bp-badge.prio { background: var(--line); color: #070a12; }
 .bp-badge.working { background: var(--accent); color: #070a12; }
 .bp-badge.mine { background: rgba(7,10,18,.75); color: var(--text); border: 1px solid rgba(255,255,255,.25); }
-.bp-vessel.is-working .bp-occ { box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(240,180,41,.25); }
+.bp-vessel.is-working .bp-ship { filter: drop-shadow(0 0 8px rgba(240,180,41,.55)); }
 .bp-vessel.is-working .bp-mast-light { animation: blink 1.2s steps(2) infinite; }
 .bp-vessel.is-completed { opacity: .42; filter: grayscale(.7); }
 .bp-vessel.is-dimmed { opacity: .2; }
@@ -422,6 +420,125 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* ═══════════════════ PAGE ESCALES ═══════════════════ */
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+.filters { display: flex; align-items: center; justify-content: space-between; gap: .75rem 1rem; flex-wrap: wrap; padding: .75rem 1rem; margin-bottom: 1rem; }
+.tabs { display: flex; flex-wrap: wrap; gap: .3rem; }
+.tab { background: transparent; border: 1px solid transparent; color: var(--muted-light); font: inherit; font-size: .85rem; padding: .4rem .75rem; border-radius: 8px; cursor: pointer; }
+.tab:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.tab.on { color: var(--accent); background: rgba(240,180,41,.12); border-color: rgba(240,180,41,.3); }
+.tab span { font-size: .72rem; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--muted-light); }
+.filter-fields { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.filter-fields select, .search input {
+    background: rgba(255,255,255,.035); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text);
+    font: inherit; font-size: .85rem; padding: .45rem .7rem; color-scheme: dark;
+}
+.search { position: relative; }
+.search i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .8rem; }
+.search input { padding-left: 2rem; min-width: 220px; }
+.filter-fields select:focus, .search input:focus { outline: none; border-color: var(--accent); }
+
+/* ═══════════════════ PARAMÉTRAGE ═══════════════════ */
+.settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.settings-grid .form-card h2 .step i { font-size: .72rem; }
+.quay-preview-wrap { overflow-x: auto; margin-top: .75rem; }
+.quay-preview { display: block; }
+.muted-txt { color: var(--muted-light); font-size: .82rem; }
+.help-txt { color: var(--muted-light); font-size: .83rem; margin: -.4rem 0 .9rem; }
+.count-pill { font-family: 'DM Sans', sans-serif; font-size: .75rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: rgba(240,180,41,.14); color: var(--accent); }
+.bollard-table-wrap { max-height: 460px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+.bollard-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.bollard-table th { position: sticky; top: 0; background: var(--panel-2); text-align: left; font-weight: 500; font-size: .76rem; color: var(--muted-light); padding: .55rem .7rem; border-bottom: 1px solid var(--border); z-index: 1; }
+.bollard-table td { padding: .35rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.bollard-table input[type=text], .bollard-table input[type=number] {
+    width: 100%; background: rgba(255,255,255,.035); border: 1px solid var(--border-2); border-radius: 7px;
+    padding: .4rem .55rem; font: inherit; font-size: .86rem; color: var(--text); color-scheme: dark;
+}
+.bollard-table input:focus { outline: none; border-color: var(--accent); }
+.bollard-table input[type=checkbox] { accent-color: var(--accent-3); width: 16px; height: 16px; }
+.bollard-table .center { text-align: center; vertical-align: middle; }
+.bollard-table .metrage { vertical-align: middle; white-space: nowrap; }
+.bollard-table tr.row-del td { opacity: .45; text-decoration: line-through; }
+.bollard-table tr.row-out input[name$="position_m"] { border-color: var(--accent-3); }
+.bollard-table tr.row-err td { background: rgba(229,83,61,.06); }
+.sticky-actions { position: sticky; bottom: 0; padding: 1rem 0; background: linear-gradient(0deg, var(--surface) 70%, transparent); z-index: 5; }
+#generateBtn { margin-top: 1rem; }
+
+/* Navire en conflit (chevauchement anormal) */
+.bp-vessel.is-conflict { opacity: .75; }
+.bp-vessel.is-conflict .bp-ship { filter: drop-shadow(0 0 6px rgba(229,83,61,.9)); }
+.bp-badge.conflict { background: var(--accent-3); color: #fff; }
+.bp-badge.delay { background: rgba(7,10,18,.8); color: var(--accent); border: 1px solid rgba(240,180,41,.5); }
+
+@media (max-width: 1100px) { .settings-grid { grid-template-columns: 1fr; } }
+.calls td:nth-child(3), .calls td:nth-child(4) { white-space: nowrap; }
+
+/* Listes déroulantes lisibles (fond sombre, texte clair) */
+select option, select optgroup { background-color: #131a2a; color: #e8edf5; }
+select option:checked { background-color: #2a3652; color: #f0b429; }
+select option:disabled { color: #5a6580; }
+
+/* Durée rapide pour l'ETD */
+.quick-etd { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .75rem; font-size: .82rem; color: var(--muted-light); }
+.quick-etd button {
+    background: rgba(240,180,41,.08); border: 1px solid rgba(240,180,41,.3); color: var(--accent);
+    font: inherit; font-size: .8rem; font-weight: 500; padding: .3rem .6rem; border-radius: 7px; cursor: pointer;
+}
+.quick-etd button:hover { background: rgba(240,180,41,.18); }
+.quick-etd input {
+    width: 64px; background: rgba(255,255,255,.035); border: 1px solid var(--border-2); border-radius: 7px;
+    padding: .3rem .45rem; font: inherit; font-size: .82rem; color: var(--text); color-scheme: dark;
+}
+
+/* Escale courte : ruban compact (navire simplifié + nom et heures dedans) */
+.bp-compact .bp-compact-label {
+    position: absolute; left: 10%; right: 12%; top: 25%; bottom: 0; display: flex; align-items: center; gap: 4px;
+    color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,.7); line-height: 1;
+}
+.bp-compact .bp-compact-label b { font-family: 'Syne', sans-serif; font-weight: 700; }
+.bp-time .t b { font-family: "Syne", sans-serif; font-weight: 700; }
+
+/* ═══════════════════ MENU UTILISATEUR ═══════════════════ */
+.user-menu { position: relative; margin-left: auto; }
+.user-menu-btn {
+    display: flex; align-items: center; gap: .65rem; cursor: pointer;
+    background: rgba(255,255,255,.03); border: 1px solid var(--border-2); border-radius: 12px;
+    padding: .35rem .7rem .35rem .4rem; color: var(--text); font: inherit; transition: background .15s, border-color .15s;
+}
+.user-menu-btn:hover, .user-menu.open .user-menu-btn { background: rgba(255,255,255,.06); border-color: rgba(240,180,41,.4); }
+.user-avatar {
+    width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none;
+    background: linear-gradient(140deg, var(--accent), #d99a12); color: #070a12;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem;
+}
+.user-avatar.lg { width: 40px; height: 40px; font-size: 1.1rem; border-radius: 11px; }
+.user-meta { text-align: left; line-height: 1.2; }
+.user-name { font-size: .86rem; font-weight: 500; color: var(--text); white-space: nowrap; }
+.user-role { font-size: .72rem; color: var(--muted-light); white-space: nowrap; }
+.user-chevron { font-size: .7rem; color: var(--muted-light); transition: transform .2s; }
+.user-menu.open .user-chevron { transform: rotate(180deg); }
+.user-dropdown {
+    position: absolute; right: 0; top: calc(100% + 8px); min-width: 250px; z-index: 120;
+    background: var(--panel-2); border: 1px solid var(--border-2); border-radius: 12px; padding: .4rem;
+    box-shadow: 0 20px 50px rgba(0,0,0,.55);
+    opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .15s, transform .15s, visibility .15s;
+}
+.user-menu.open .user-dropdown { opacity: 1; visibility: visible; transform: none; }
+.dropdown-head { display: flex; align-items: center; gap: .7rem; padding: .6rem .6rem .4rem; }
+.dropdown-info { padding: .2rem .6rem .5rem; }
+.dropdown-sep { height: 1px; background: var(--border); margin: .35rem .2rem; }
+.dropdown-item-custom {
+    display: flex; align-items: center; gap: .65rem; width: 100%; padding: .55rem .7rem; border-radius: 8px;
+    color: var(--text); font: inherit; font-size: .88rem; text-align: left; background: none; border: none; cursor: pointer;
+}
+.dropdown-item-custom i { width: 16px; text-align: center; color: var(--muted-light); }
+.dropdown-item-custom:hover { background: rgba(255,255,255,.05); color: var(--text); }
+.dropdown-item-danger, .dropdown-item-danger i { color: #f39a8c; }
+.dropdown-item-danger:hover { background: rgba(229,83,61,.12); color: #ffb4a8; }
+.user-dropdown form { margin: 0; }
+@media (max-width: 720px) { .user-meta { display: none; } }
+
 </style>
     
 </head>
@@ -436,26 +553,47 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
 
         {% if user.is_authenticated %}
         <nav class="nav">
-            {% url 'home' as home_url %}{% url 'call_create' as create_url %}
+            {% url 'home' as home_url %}{% url 'call_create' as create_url %}{% url 'calls_list' as calls_url %}{% url 'quay_settings' as settings_url %}
             <a href="{{ home_url }}" class="{% if request.path == home_url %}active{% endif %}"><i class="fas fa-ship"></i><span>Berth plan</span></a>
+            <a href="{{ calls_url }}" class="{% if request.path == calls_url %}active{% endif %}"><i class="fas fa-list"></i><span>Escales</span></a>
             <a href="{{ create_url }}" class="{% if request.path == create_url %}active{% endif %}"><i class="fas fa-plus"></i><span>Déclarer une escale</span></a>
-            {% if user.is_staff %}<a href="{% url 'admin:index' %}"><i class="fas fa-gear"></i><span>Administration</span></a>{% endif %}
+            {% if user.is_staff %}<a href="{{ settings_url }}" class="{% if request.path == settings_url %}active{% endif %}"><i class="fas fa-sliders"></i><span>Paramétrage</span></a>{% endif %}
         </nav>
 
-        <div class="user-box">
-            <div class="user-chip">
-                <i class="fas fa-circle-user"></i>
-                <strong>{{ user.get_full_name|default:user.username }}</strong>
+        <div class="user-menu" id="userMenu">
+            <button type="button" class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu(event)"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown">
+                <div class="user-avatar">{{ user.username|first|upper }}</div>
+                <div class="user-meta">
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="user-role">{% if user.agent_profile %}{{ user.agent_profile.get_line_display }}{% elif user.is_staff %}Planificateur TCN{% endif %}</div>
+                </div>
+                <i class="fas fa-chevron-down user-chevron"></i>
+            </button>
+
+            <div class="user-dropdown" id="userDropdown" role="menu">
+                <div class="dropdown-head">
+                    <div class="user-avatar lg">{{ user.username|first|upper }}</div>
+                    <div>
+                        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="user-role">@{{ user.username }}</div>
+                    </div>
+                </div>
                 {% if user.agent_profile %}
-                    <span class="line-pill" data-line="{{ user.agent_profile.line }}"><span class="dot"></span>{{ user.agent_profile.get_line_display }}</span>
+                    <div class="dropdown-info"><span class="line-pill" data-line="{{ user.agent_profile.line }}"><span class="dot"></span>{{ user.agent_profile.get_line_display }}</span></div>
                 {% elif user.is_staff %}
-                    <span class="line-pill"><span class="dot"></span>Planificateur TCN</span>
+                    <div class="dropdown-info"><span class="line-pill"><span class="dot"></span>Planificateur TCN</span></div>
                 {% endif %}
+                <div class="dropdown-sep"></div>
+                <div class="dropdown-sep"></div>
+                {# La déconnexion se fait en POST (sécurité Django) : un formulaire plutôt qu'un simple lien #}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item-custom dropdown-item-danger" role="menuitem">
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
+                    </button>
+                </form>
             </div>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn-logout" title="Déconnexion"><i class="fas fa-right-from-bracket"></i> Déconnexion</button>
-            </form>
         </div>
         {% endif %}
     </header>
@@ -480,7 +618,10 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
             <span class="line-pill" data-line="{{ today_owner }}"><span class="dot"></span>{{ today_owner }}</span>
         </p>
     </div>
-    <a href="{% url 'call_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Déclarer une escale</a>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a href="{% url 'calls_list' %}" class="btn"><i class="fas fa-list"></i> {% if user.is_staff %}Toutes les escales{% else %}Mes escales{% endif %}</a>
+        <a href="{% url 'call_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Déclarer une escale</a>
+    </div>
 </div>
 
 <!-- État du quai -->
@@ -538,6 +679,7 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
         {% if my_line %}
         <label class="toggle"><input type="checkbox" id="bpMine"> Mes navires seulement</label>
         {% endif %}
+        <a class="btn btn-sm" id="bpPdf" href="{% url 'plan_pdf' %}" data-url="{% url 'plan_pdf' %}" title="Télécharger le berth plan affiché en PDF (A3)"><i class="fas fa-file-pdf"></i> Télécharger PDF</a>
         <span class="live" id="bpLive"><span class="pulse"></span><span id="bpLiveText">Chargement…</span></span>
     </div>
 
@@ -545,7 +687,7 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
         {% for l in lines %}
         <span class="legend-item"><span class="swatch" data-line="{{ l.code }}"></span><b>{{ l.code }}</b> {{ l.day_names|join:", " }}</span>
         {% endfor %}
-        <span class="legend-item" style="margin-left:auto"><span style="width:22px;border-top:1.5px dashed var(--accent)"></span> décalage depuis l'ETA demandé</span>
+        <span class="legend-item" style="margin-left:auto"><span style="width:2px;height:14px;background:var(--accent-2)"></span> séjour à quai jusqu'au départ · badge « Décalé » : navire repoussé après son ETA</span>
     </div>
 
     <div class="bp" id="berthPlan"
@@ -568,71 +710,6 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
     </div>
 </section>
 
-<!-- Liste des escales -->
-<div class="section-title">
-    <h2>{% if user.is_staff %}Toutes les escales{% else %}Mes escales{% endif %}</h2>
-</div>
-<section class="panel table-wrap">
-    {% if calls %}
-    <table class="calls">
-        <thead>
-            <tr>
-                <th>Navire</th><th>Ligne</th><th>TE</th><th>Bollards</th><th>ETA / ETD demandés</th><th>Accostage prévu</th><th>Statut</th><th>Remarque</th><th></th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for c in calls %}
-            <tr>
-                <td>
-                    <div class="vname">
-                        <span class="bar" data-line="{{ c.line }}"></span>
-                        <div><b>{{ c.vessel.name }}</b><small>IMO {{ c.vessel.imo }} · {{ c.vessel.loa|floatformat:0 }} m{% if c.voyage %} · V.{{ c.voyage }}{% endif %}</small></div>
-                    </div>
-                </td>
-                <td>{{ c.get_line_display }}</td>
-                <td>{% if c.draft %}{{ c.draft|floatformat:1 }} m{% else %}<span class="muted">—</span>{% endif %}</td>
-                <td class="muted">{{ c.bollard_from.name|default:"—" }} → {{ c.bollard_to.name|default:"—" }}</td>
-                <td class="muted">{{ c.eta|date:"d/m H:i" }} → {{ c.etd|date:"d/m H:i" }}</td>
-                <td>{{ c.planned_start|date:"D d/m H:i" }} → {{ c.planned_end|date:"d/m H:i" }}</td>
-                <td><span class="status status-{{ c.status }}">{{ c.get_status_display }}</span></td>
-                <td>
-                    {% if c.shift_reason %}<span class="shift"><i class="fas fa-clock-rotate-left"></i> {{ c.shift_reason }}</span>
-                    {% elif c.is_priority and c.status == 'PLANNED' %}<span class="prio-tag"><i class="fas fa-star"></i> Fenêtre prioritaire</span>
-                    {% else %}<span class="muted">—</span>{% endif %}
-                </td>
-                <td>
-                    <div class="actions">
-                        <a class="btn btn-sm" href="?focus={{ c.pk }}" title="Voir sur le plan"><i class="fas fa-location-crosshairs"></i></a>
-                        {% if c.can_edit %}
-                        <a class="btn btn-sm" href="{% url 'call_edit' c.pk %}" title="Modifier"><i class="fas fa-pen"></i></a>
-                        <form method="post" action="{% url 'call_cancel' c.pk %}" onsubmit="return confirm('Annuler cette escale ?')">
-                            {% csrf_token %}<button class="btn btn-sm btn-danger" title="Annuler l'escale"><i class="fas fa-xmark"></i></button>
-                        </form>
-                        {% endif %}
-                        {% if user.is_staff and c.status == 'PLANNED' and not working %}
-                        <form method="post" action="{% url 'call_berth' c.pk %}" onsubmit="return confirm('Confirmer l\'accostage de {{ c.vessel.name|escapejs }} ?')">
-                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="Démarrer les opérations"><i class="fas fa-anchor"></i></button>
-                        </form>
-                        {% endif %}
-                        {% if user.is_staff and c.status == 'WORKING' %}
-                        <form method="post" action="{% url 'call_complete' c.pk %}" onsubmit="return confirm('Terminer les opérations ?')">
-                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="Terminer les opérations"><i class="fas fa-flag-checkered"></i></button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="empty-state">
-        <p>Vous n'avez encore déclaré aucune escale.</p>
-        <a href="{% url 'call_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Déclarer une escale</a>
-    </div>
-    {% endif %}
-</section>
-
 <!-- Infobulle + tiroir de détail -->
 <div class="bp-tooltip" id="bpTooltip" role="tooltip"></div>
 <aside class="drawer" id="bpDrawer" aria-label="Détail de l'escale">
@@ -649,11 +726,27 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
         // couleur de la ligne sur les pastilles
         const LINE_COLORS = {MAE: '#42b0d5', HLC: '#f58220', CMA: '#e5533d', ARK: '#2ec4a6'};
         document.querySelectorAll('.line-pill[data-line]').forEach(el => el.style.setProperty('--line', LINE_COLORS[el.dataset.line]));
+        // menu utilisateur
+        function toggleUserMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('userMenu');
+            const open = menu.classList.toggle('open');
+            document.getElementById('userMenuBtn').setAttribute('aria-expanded', open);
+        }
+        function closeUserMenu() {
+            const menu = document.getElementById('userMenu');
+            if (menu && menu.classList.contains('open')) {
+                menu.classList.remove('open');
+                document.getElementById('userMenuBtn').setAttribute('aria-expanded', 'false');
+            }
+        }
+        document.addEventListener('click', (e) => { if (!e.target.closest('#userMenu')) closeUserMenu(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeUserMenu(); });
         // les messages se ferment seuls (sauf erreurs)
         document.querySelectorAll('.toast:not(.error)').forEach(t => setTimeout(() => t.remove(), 9000));
     </script>
     <script>
-    document.querySelectorAll('.swatch[data-line], .bar[data-line]').forEach(el => el.style.setProperty('--line', LINE_COLORS[el.dataset.line]));
+    document.querySelectorAll('.swatch[data-line]').forEach(el => el.style.setProperty('--line', LINE_COLORS[el.dataset.line]));
 </script>
 <script>
 {% verbatim %}
@@ -668,7 +761,7 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
     if (!root) return;
 
     const HOUR = 36e5;
-    const AXIS_W = 124;      // colonne des dates (px)
+    const AXIS_W = 132;      // colonne des dates : jour à gauche, heures à droite (px)
     const HEAD_H = 78;       // règle du quai (px)
     const PAD_X = 16;        // marge de part et d'autre du quai (px)
     const HOUR_PX = { 3: 24, 7: 12, 14: 7, 30: 3.6 };
@@ -705,6 +798,8 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
     const pad = (n) => String(n).padStart(2, '0');
     const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const fmt = (iso) => { const d = new Date(iso); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+    const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const fmtDay = (iso) => { const d = new Date(iso); return `${DAYS[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
     const fmtTime = (iso) => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
     const num = (n) => (Math.round(n * 10) / 10).toLocaleString('fr-FR');
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -723,12 +818,14 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
     const BOX_COLORS = ['#d64532', '#2f78c4', '#e8b33a', '#3aa57a', '#d9dee8', '#6c7a96', '#b5562b'];
 
     function shipSVG(w, h, color, seed, status) {
-        const W = Math.max(w, 8), H = Math.max(h, 24);
+        const W = Math.max(w, 8), H = Math.max(h, 6);
         const k = ++uid;
-        if (W < 48) {
-            return `<svg class="bp-ship" width="${W}" height="${H}" aria-hidden="true">
-                <rect x="1" y="${H * 0.45}" width="${W - 2}" height="${H * 0.5}" rx="3" fill="#15203a" stroke="${color}" stroke-width="1.5"/>
-                <rect x="1" y="${H * 0.45}" width="${W - 2}" height="${H * 0.12}" fill="${color}"/></svg>`;
+        if (W < 48 || H < 22) {
+            // Silhouette simplifiée quand la place manque (zoom 30 j, escale courte)
+            const b = Math.min(14, W * 0.15);
+            return `<svg class="bp-ship" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+                <path d="M0 ${H * 0.25} L${W - b} ${H * 0.25} L${W} ${H * 0.1} L${W - b * 0.7} ${H} L${b * 0.3} ${H} Z" fill="${color}"/>
+                <rect x="${W * 0.04}" y="0" width="${Math.max(3, W * 0.06)}" height="${H * 0.3}" fill="#e3e8f0"/></svg>`;
         }
         const R = rng(seed);
         const deck = H * 0.50, wl = H * 0.80, keel = H * 0.97;
@@ -861,7 +958,15 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
         const mPx = Math.max((avail - AXIS_W - PAD_X * 2 - 2) / L, 1.8);
         const quayW = Math.round(L * mPx + PAD_X * 2);
         const XM = (m) => PAD_X + m * mPx;
-        const hPx = HOUR_PX[state.days] || 12;
+        // Échelle du temps : on agrandit automatiquement (vues 3 et 7 jours) pour que
+        // l'escale la plus courte ait au moins MIN_SLOT px et que son navire reste lisible.
+        const MIN_SLOT = 52;
+        const rsMs = +new Date(d.range.start), reMs = +new Date(d.range.end);
+        const shortest = d.calls
+            .filter((c) => +new Date(c.end) > rsMs && +new Date(c.start) < reMs)
+            .reduce((m, c) => Math.min(m, (+new Date(c.end) - +new Date(c.start)) / HOUR), Infinity);
+        let hPx = HOUR_PX[state.days] || 12;
+        if (state.days <= 7 && shortest < Infinity) hPx = Math.max(hPx, Math.min(28, MIN_SLOT / Math.max(shortest, 0.5)));
         const dayH = 24 * hPx;
         const totalH = Math.round(state.days * dayH);
         const rs = +new Date(d.range.start);
@@ -891,14 +996,14 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
         els.ruler.innerHTML = r;
 
         /* Colonne des dates (fenêtres prioritaires) */
-        const hStep = hPx >= 18 ? 2 : hPx >= 10 ? 4 : hPx >= 6 ? 6 : 12;
+        const hStep = [1, 2, 3, 4, 6, 12].find((st) => st * hPx >= 14) || 12;   // 00:00, 02:00 … 22:00 selon le zoom
         let a = '';
         d.windows.forEach((w, i) => {
             const top = i * dayH, Lc = d.lines[w.owner];
             a += `<div class="bp-dayaxis ${w.date === todayYmd ? 'is-today' : ''}" style="top:${top}px;height:${dayH}px;--line:${Lc.color}">
-                <div class="bp-dayaxis-label"><b>${w.day_short} ${w.num}</b><span><i></i>Fenêtre ${w.owner}</span></div></div>`;
-            if (dayH >= 60) {
-                for (let h = hStep; h < 24; h += hStep) a += `<div class="bp-htick" style="top:${top + h * hPx}px">${pad(h)}:00</div>`;
+                <div class="bp-dayaxis-label"><b>${w.day_short}</b><b>${w.num}</b><span><i></i>${w.owner}</span></div></div>`;
+            for (let h = 0; h < 24; h += hStep) {
+                a += `<div class="bp-htick ${h === 0 ? 'is-midnight' : ''}" style="top:${top + h * hPx}px">${pad(h)}:00</div>`;
             }
         });
         if (ny >= 0 && ny <= totalH) a += `<div class="bp-now-tag" style="top:${ny}px">${fmtTime(d.now)}</div>`;
@@ -908,27 +1013,44 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
         let html = '';
         d.windows.forEach((w, i) => {
             html += `<div class="bp-window" style="top:${i * dayH}px;height:${dayH}px;--line:${d.lines[w.owner].color}"><span class="bp-window-tag">${w.owner}</span></div>`;
-            if (dayH >= 60) for (let h = hStep; h < 24; h += hStep) html += `<div class="bp-hline" style="top:${i * dayH + h * hPx}px"></div>`;
+            for (let h = hStep; h < 24; h += hStep) html += `<div class="bp-hline" style="top:${i * dayH + h * hPx}px"></div>`;
         });
         Q.bollards.forEach((b) => { html += `<div class="bp-bline" style="left:${XM(b.pos)}px"></div>`; });
         html += `<div class="bp-quayzone" style="left:${XM(0)}px;width:${L * mPx}px"></div>`;
 
-        let visible = 0;
-        for (const c of d.calls) {
+        // Géométrie de chaque escale + détection des chevauchements (aucun ne devrait exister)
+        const geo = d.calls.map((c) => {
             const top = Y(c.start), bottom = Y(c.end);
-            if (bottom < 0 || top > totalH) continue;
+            return { c, top, bottom, x1: c.berth_from, x2: c.berth_to };
+        });
+        geo.forEach((g, i) => {
+            g.conflict = geo.some((o, j) => j !== i && o.c.status !== 'COMPLETED' && g.c.status !== 'COMPLETED'
+                && g.top < o.bottom - 1 && o.top < g.bottom - 1 && g.x1 < o.x2 && o.x1 < g.x2);
+        });
+
+        let visible = 0;
+        for (const g of geo) {
+            const c = g.c;
+            if (g.bottom < 0 || g.top > totalH) continue;
             visible++;
-            const h = Math.max(bottom - top, 18);
+            const top = g.top + 1.5;                       // espace entre deux escales qui se suivent
+            const h = Math.max(g.bottom - g.top - 3, 4);   // jamais au-delà de son créneau
             const left = XM(c.berth_from);
             const w = Math.max(c.loa * mPx, 34);
 
-            if (c.shifted && c.status === 'PLANNED') {
-                const gy = Y(c.eta), gh = Y(c.etd) - gy;
-                html += `<div class="bp-ghost" style="left:${left}px;width:${w}px;top:${gy}px;height:${gh}px;--line:${c.color}"><span>ETA demandé · ${esc(c.vessel)}</span></div>`;
-                if (top - gy > 14) html += `<div class="bp-shift" style="left:${left + w + 8}px;top:${gy}px;height:${top - gy}px"><span>+${duration(c.delay_minutes)}</span></div>`;
+            // Escale trop courte pour le dessin complet (vues 14/30 jours) : ruban compact lisible
+            if (h < 40) {
+                html += `<div class="${['bp-vessel', 'bp-compact', `is-${c.status.toLowerCase()}`, c.mine ? 'is-mine' : '', state.mineOnly && !c.mine ? 'is-dimmed' : '', g.conflict ? 'is-conflict' : ''].join(' ')}"
+                            data-id="${c.id}" tabindex="0" role="button"
+                            aria-label="${esc(c.vessel)}, ${esc(c.line_name)}, ${fmt(c.start)} à ${fmt(c.end)}"
+                            style="left:${left}px;width:${w}px;top:${top}px;height:${h}px;--line:${c.color}">
+                    ${shipSVG(w, h, c.color, c.id, c.status)}
+                    ${h >= 11 && w > 60 ? `<span class="bp-compact-label" style="font-size:${Math.min(11, Math.max(8, h * 0.45))}px"><b>${esc(c.vessel)}</b> ${c.line} · ${fmtTime(c.start)} → ${fmtTime(c.end)}${c.shifted && c.status === 'PLANNED' ? ' · décalé +' + duration(c.delay_minutes) : ''}</span>` : ''}
+                </div>`;
+                continue;
             }
-
-            const shipH = Math.min(h, Math.max(28, Math.min(w * 0.42, 150)));
+            const head = (h >= 34 && w > 70) ? 17 : 0;          // bandeau des heures au-dessus du navire
+            const shipH = Math.min(h - head, Math.min(w * 0.42, 150));
             const cls = ['bp-vessel', `is-${c.status.toLowerCase()}`];
             if (c.mine) cls.push('is-mine');
             if (state.mineOnly && !c.mine) cls.push('is-dimmed');
@@ -936,29 +1058,38 @@ table.calls { width: 100%; border-collapse: collapse; font-size: .86rem; }
             if (c.status === 'WORKING') badges.push('<span class="bp-badge working">En opération</span>');
             if (c.is_priority && c.status === 'PLANNED') badges.push(`<span class="bp-badge prio">Prioritaire ${c.line}</span>`);
             if (c.mine) badges.push('<span class="bp-badge mine">Mon navire</span>');
+            if (c.shifted && c.status === 'PLANNED') badges.push(`<span class="bp-badge delay">Décalé +${duration(c.delay_minutes)}</span>`);
+            if (g.conflict) { cls.push('is-conflict'); badges.push('<span class="bp-badge conflict">Chevauchement</span>'); }
 
-            const label = (w > 110 && shipH >= 44)
-                ? `<div class="bp-label" style="top:${shipH * 0.5}px;height:${shipH * 0.3}px"><b>${esc(c.vessel)}</b><span>${c.line} · ${num(c.loa)} m${c.draft ? ' · TE ' + num(c.draft) + ' m' : ''}</span></div>` : '';
-            const info = (h - shipH >= 34 && w > 110)
-                ? `<div class="bp-info" style="top:${shipH + 4}px">
+            const label = (w > 110 && shipH >= 58)
+                ? `<div class="bp-label" style="top:${head + shipH * 0.5}px;height:${shipH * 0.3}px"><b>${esc(c.vessel)}</b><span>${c.line} · ${num(c.loa)} m${c.draft ? ' · TE ' + num(c.draft) + ' m' : ''}</span></div>` : '';
+            const info = (h - head - shipH >= 22 && w > 110)
+                ? `<div class="bp-info" style="top:${head + shipH + 6}px;max-height:${h - head - shipH - 8}px">
                      ${label ? '' : `<b>${esc(c.vessel)}</b>`}
-                     <span><i class="fas fa-clock"></i> ${fmt(c.start)} → ${fmt(c.end)}</span>
                      <span><i class="fas fa-grip-lines-vertical"></i> ${bollardsText(c)} · ${metrage(c, Q)}</span>
+                   </div>` : '';
+            const timeBar = head ? `<div class="bp-time" style="height:${head}px">
+                     <span class="t">${label ? '' : `<b>${esc(c.vessel)}</b> · ${c.line} · `}${fmtDay(c.start)} → ${fmtDay(c.end)}</span>
+                     ${badges.length && w > 160 ? `<span class="bp-badges">${badges.join('')}</span>` : ''}
                    </div>` : '';
 
             html += `<div class="${cls.join(' ')}" data-id="${c.id}" tabindex="0" role="button"
                         aria-label="${esc(c.vessel)}, ${esc(c.line_name)}, ${fmt(c.start)} à ${fmt(c.end)}, bollards ${bollardsText(c)}"
                         style="left:${left}px;width:${w}px;top:${top}px;height:${h}px;--line:${c.color}">
-                <div class="bp-occ"></div>
+                ${timeBar}
                 ${shipSVG(w, shipH, c.color, c.id, c.status)}
+                ${h - head - shipH > 10 ? `<div class="bp-stay" style="top:${head + shipH}px"></div>` : ''}
                 ${label}${info}
-                ${badges.length && w > 80 ? `<div class="bp-badges">${badges.join('')}</div>` : ''}
             </div>`;
         }
 
         if (ny >= 0 && ny <= totalH) html += `<div class="bp-now" style="top:${ny}px"></div>`;
         if (!visible) html += `<div class="bp-empty"><div>Aucun navire sur cette période. Le quai est disponible.</div></div>`;
         els.canvas.innerHTML = html;
+
+        // Lien PDF : même période que l'écran
+        const pdf = document.getElementById('bpPdf');
+        if (pdf) pdf.href = `${pdf.dataset.url}?start=${ymd(state.start)}&days=${state.days}`;
 
         const last = addDays(new Date(d.range.end), -1);
         els.range.textContent = `${fmt(d.range.start).slice(0, 5)} au ${pad(last.getDate())}/${pad(last.getMonth() + 1)}`;

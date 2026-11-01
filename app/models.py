@@ -104,17 +104,28 @@ class QuayConfig(models.Model):
         self.pk = 1  # une seule configuration
         super().save(*args, **kwargs)
 
-    def generate_bollards(self):
-        """Recrée les bollards tous les `bollard_spacing_m` mètres, de 0 à la longueur du quai."""
+    def generate_bollards(self, count=None):
+        """Recrée les bollards répartis sur le quai.
+        - count : nombre de bollards, répartis uniformément de 0 à la longueur du quai ;
+        - sinon : un bollard tous les `bollard_spacing_m` mètres."""
         self.bollards.all().delete()
-        spacing = max(self.bollard_spacing_m, Decimal("5"))
-        pos, i, items = Decimal("0"), 1, []
-        while pos <= self.length_m:
-            items.append(Bollard(quay=self, name=f"{self.bollard_prefix}{i:02d}", position_m=pos))
-            pos += spacing
-            i += 1
-        Bollard.objects.bulk_create(items)
-        return len(items)
+        if count and count >= 2:
+            spacing = (self.length_m / (count - 1)).quantize(Decimal("0.01"))
+            positions = [(spacing * i).quantize(Decimal("0.01")) for i in range(count)]
+            positions[-1] = self.length_m
+            self.bollard_spacing_m = spacing
+            QuayConfig.objects.filter(pk=self.pk).update(bollard_spacing_m=spacing)
+        else:
+            spacing = max(self.bollard_spacing_m, Decimal("5"))
+            positions, pos = [], Decimal("0")
+            while pos <= self.length_m:
+                positions.append(pos)
+                pos += spacing
+        Bollard.objects.bulk_create([
+            Bollard(quay=self, name=f"{self.bollard_prefix}{i:02d}", position_m=p)
+            for i, p in enumerate(positions, start=1)
+        ])
+        return len(positions)
 
 
 class Bollard(models.Model):

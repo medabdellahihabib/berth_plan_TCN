@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import IntegrityError
 from django.db.models import Q
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -14,7 +14,7 @@ from django.utils.dateparse import parse_date
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from .forms import VesselCallForm
+from .forms import BollardFormSet, QuaySettingsForm, VesselCallForm
 from .models import (
     DAY_OWNER, LINE_COLORS, PRIORITY_DAYS, ShippingLine, VesselCall, berth_span, get_quay, user_line,
 )
@@ -71,6 +71,14 @@ def _week_strip(days=7):
     return out
 
 
+def _back(request, fallback="home"):
+    """Retour à la page d'origine (plan ou liste des escales)."""
+    ref = request.POST.get("next") or request.META.get("HTTP_REFERER", "")
+    if ref and url_has_allowed_host_and_scheme(ref, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(ref)
+    return redirect(fallback)
+
+
 def _can_edit(call, user):
     return call.status == S.PLANNED and (user.is_staff or call.agent_id == user.id)
 
@@ -119,25 +127,12 @@ def home(request):
     now = timezone.now()
     working = get_working_call()
     planned = VesselCall.objects.filter(status=S.PLANNED).select_related("vessel")
-
-    calls = VesselCall.objects.select_related("vessel", "agent").exclude(status=S.CANCELLED)
-    if not request.user.is_staff:
-        calls = calls.filter(agent=request.user)
-    calls = calls.filter(
-        Q(status__in=[S.PLANNED, S.WORKING]) | Q(planned_end__gte=now - timedelta(days=3))
-    ).order_by("planned_start")[:40]
-    quay = get_quay()
-    for c in calls:
-        c.can_edit = _can_edit(c, request.user)
-        _, _, c.bollard_from, c.bollard_to = berth_span(c, quay)
-
     today_owner = window_owner(now)
     context = {
         "working": working,
         "working_end": working_interval(working, now)[1] if working else None,
         "next_call": planned.order_by("planned_start").first(),
         "week_count": planned.filter(planned_start__lt=now + timedelta(days=7)).count(),
-        "calls": calls,
         "lines": _lines_payload().values(),
         "my_line": user_line(request.user),
         "today_owner": today_owner,
@@ -146,6 +141,145 @@ def home(request):
         "focus": request.GET.get("focus", ""),
     }
     return render(request, "home.html", context)
+
+
+# ─────────────────────────────────────────────────────────────
+#  Page « Escales » (liste séparée)
+# ─────────────────────────────────────────────────────────────
+STATUS_FILTERS = {
+    "actives": ("Actives", [S.PLANNED, S.WORKING]),
+    "PLANNED": ("Planifiées", [S.PLANNED]),
+    "WORKING": ("En opération", [S.WORKING]),
+    "COMPLETED": ("Terminées", [S.COMPLETED]),
+    "CANCELLED": ("Annulées", [S.CANCELLED]),
+    "toutes": ("Toutes", None),
+}
+
+
+@login_required
+def calls_list(request):
+    recompute_plan()
+    status = request.GET.get("statut", "actives")
+    if status not in STATUS_FILTERS:
+        status = "actives"
+    line = request.GET.get("ligne", "")
+    q = request.GET.get("q", "").strip()
+
+    calls = VesselCall.objects.select_related("vessel", "agent")
+    if not request.user.is_staff:
+        calls = calls.filter(agent=request.user)
+    base = calls
+    statuses = STATUS_FILTERS[status][1]
+    if statuses:
+        calls = calls.filter(status__in=statuses)
+    if line in dict(ShippingLine.choices):
+        calls = calls.filter(line=line)
+    if q:
+        calls = calls.filter(Q(vessel__name__icontains=q) | Q(vessel__imo__icontains=q) | Q(voyage__icontains=q))
+    calls = list(calls.order_by("-planned_start" if status in ("COMPLETED", "CANCELLED", "toutes") else "planned_start")[:300])
+
+    quay = get_quay()
+    working = get_working_call()
+    for c in calls:
+        c.can_edit = _can_edit(c, request.user)
+        _, _, c.bollard_from, c.bollard_to = berth_span(c, quay)
+
+    counts = {key: (base.filter(status__in=st).count() if st else base.count())
+              for key, (_, st) in STATUS_FILTERS.items()}
+    return render(request, "calls.html", {
+        "calls": calls,
+        "working": working,
+        "status": status,
+        "status_tabs": [(k, label, counts[k]) for k, (label, _) in STATUS_FILTERS.items()],
+        "line": line,
+        "q": q,
+        "lines": ShippingLine.choices,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+#  Page « Paramétrage » : quai + bollards (planificateur)
+# ─────────────────────────────────────────────────────────────
+@login_required
+def quay_settings(request):
+    if not request.user.is_staff:
+        messages.error(request, "Le paramétrage est réservé au planificateur TCN.")
+        return redirect("home")
+
+    quay = get_quay()
+    formset = None
+    if request.method == "POST":
+        action = request.POST.get("action", "save")
+        form = QuaySettingsForm(request.POST, instance=quay)
+        if action == "generate":
+            if form.is_valid():
+                quay = form.save()
+                n = quay.generate_bollards(form.cleaned_data["nb_bollards"])
+                _after_quay_change(request, quay)
+                messages.success(request, f"{n} bollards générés et répartis sur {_num_fr(quay.length_m)} m.")
+                return redirect("quay_settings")
+        else:
+            formset = BollardFormSet(request.POST, instance=quay)
+            if form.is_valid():
+                formset.quay_length = form.cleaned_data["length_m"]
+                if formset.is_valid():
+                    quay = form.save()
+                    formset.save()
+                    _after_quay_change(request, quay)
+                    messages.success(request, "Paramètres du quai enregistrés.")
+                    return redirect("quay_settings")
+            else:
+                formset.is_valid()
+    else:
+        form = QuaySettingsForm(instance=quay, initial={"nb_bollards": quay.bollards.count() or 15})
+
+    if formset is None:
+        formset = BollardFormSet(instance=quay)
+    return render(request, "settings.html", {
+        "form": form,
+        "formset": formset,
+        "quay": quay,
+        "quay_json": _quay_payload(get_quay()),
+    })
+
+
+def _num_fr(v):
+    v = float(v)
+    return f"{v:.0f}" if v == int(v) else f"{v:.2f}".rstrip("0").replace(".", ",")
+
+
+def _after_quay_change(request, quay):
+    """Prévient si des escales actives ne tiennent plus sur le quai."""
+    too_long = VesselCall.objects.filter(
+        status__in=[S.PLANNED, S.WORKING], vessel__loa__gt=quay.length_m
+    ).select_related("vessel")
+    for c in too_long:
+        messages.warning(request, f"{c.vessel.name} ({_num_fr(c.vessel.loa)} m) est plus long que le quai.")
+    too_deep = VesselCall.objects.filter(status__in=[S.PLANNED, S.WORKING], draft__gt=quay.max_draft_m)
+    if too_deep.exists():
+        messages.warning(request, f"{too_deep.count()} escale(s) ont un tirant d'eau supérieur au nouveau maximum.")
+
+
+# ─────────────────────────────────────────────────────────────
+#  Export PDF du berth plan
+# ─────────────────────────────────────────────────────────────
+@login_required
+def plan_pdf(request):
+    try:
+        from .pdf import build_plan_pdf
+    except ImportError:
+        return HttpResponse("Module reportlab manquant : pip install reportlab", status=500,
+                            content_type="text/plain; charset=utf-8")
+    recompute_plan()
+    start_date = parse_date(request.GET.get("start", "") or "") or (timezone.localdate() - timedelta(days=1))
+    try:
+        days = max(1, min(int(request.GET.get("days", 7)), 31))
+    except ValueError:
+        days = 7
+    pdf = build_plan_pdf(start_date, days)
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="berth-plan-TCN_{start_date:%Y-%m-%d}_{days}j.pdf"'
+    return resp
 
 
 def _feedback(request, call):
@@ -240,7 +374,7 @@ def call_cancel(request, pk):
     call.save(update_fields=["status", "updated_at"])
     recompute_plan()
     messages.info(request, f"Escale de {call.vessel.name} annulée. Le plan a été recalculé.")
-    return redirect("home")
+    return _back(request)
 
 
 @login_required
@@ -253,7 +387,7 @@ def call_berth(request, pk):
     working = get_working_call()
     if working:
         messages.error(request, f"{working.vessel.name} est déjà en opération au quai.")
-        return redirect("home")
+        return _back(request)
 
     now = timezone.now()
     call.status = S.WORKING
@@ -265,10 +399,10 @@ def call_berth(request, pk):
         call.save()
     except IntegrityError:
         messages.error(request, "Un autre navire vient d'être mis en opération.")
-        return redirect("home")
+        return _back(request)
     recompute_plan()
     messages.success(request, f"{call.vessel.name} est à quai, opérations démarrées.")
-    return redirect(f"{reverse('home')}?focus={call.pk}")
+    return _back(request)
 
 
 @login_required
@@ -285,7 +419,7 @@ def call_complete(request, pk):
     call.save()
     recompute_plan()
     messages.success(request, f"Opérations terminées pour {call.vessel.name}. Le quai est libre.")
-    return redirect("home")
+    return _back(request)
 
 
 # ─────────────────────────────────────────────────────────────
