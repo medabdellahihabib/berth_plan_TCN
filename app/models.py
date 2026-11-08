@@ -17,16 +17,28 @@ class ShippingLine(models.TextChoices):
     ARK = "ARK", "Arkas"
 
 
-# 0 = lundi ... 6 = dimanche (datetime.weekday())
+class Role(models.TextChoices):
+    """Rôle d'un utilisateur : agent TCN (planificateur) ou agent d'une des 4 lignes."""
+    TCN = "TCN", "Agent TCN (planificateur)"
+    MAE = "MAE", "Agent Maersk"
+    HLC = "HLC", "Agent Hapag-Lloyd"
+    CMA = "CMA", "Agent CMA CGM"
+    ARK = "ARK", "Agent Arkas"
+
+
+# Fenêtres prioritaires par défaut : 0 = lundi ... 6 = dimanche (datetime.weekday()).
+# Les valeurs réellement utilisées sont modifiables dans Paramétrage (modèle PriorityDay).
 PRIORITY_DAYS = {
     "MAE": (0, 5),  # lundi, samedi
     "HLC": (3, 4),  # jeudi, vendredi
     "CMA": (2, 6),  # mercredi, dimanche
     "ARK": (1,),    # mardi
 }
+DEFAULT_DAY_OWNER = {day: line for line, days in PRIORITY_DAYS.items() for day in days}
 
-# Jour -> ligne propriétaire de la fenêtre
-DAY_OWNER = {day: line for line, days in PRIORITY_DAYS.items() for day in days}
+WEEKDAYS = [(0, "Lundi"), (1, "Mardi"), (2, "Mercredi"), (3, "Jeudi"),
+            (4, "Vendredi"), (5, "Samedi"), (6, "Dimanche")]
+FREE_COLOR = "#6c7a96"   # jour sans ligne prioritaire
 
 LINE_COLORS = {
     "MAE": "#42b0d5",
@@ -34,6 +46,31 @@ LINE_COLORS = {
     "CMA": "#e5533d",
     "ARK": "#2ec4a6",
 }
+
+
+DAY_OWNERS_CACHE_KEY = "berth:day-owners"
+
+
+def get_day_owners():
+    """{jour (0-6): ligne prioritaire ou None} — paramétrable, mis en cache 5 min."""
+    from django.core.cache import cache
+    owners = cache.get(DAY_OWNERS_CACHE_KEY)
+    if owners is None:
+        rows = {p.weekday: (p.line or None) for p in PriorityDay.objects.all()}
+        if len(rows) < 7:          # première utilisation : valeurs par défaut
+            for day, _ in WEEKDAYS:
+                if day not in rows:
+                    PriorityDay.objects.get_or_create(weekday=day, defaults={"line": DEFAULT_DAY_OWNER.get(day, "")})
+                    rows[day] = DEFAULT_DAY_OWNER.get(day)
+        owners = rows
+        cache.set(DAY_OWNERS_CACHE_KEY, owners, 300)
+    return owners
+
+
+def line_days(owners=None):
+    """{ligne: [jours]} à partir des fenêtres paramétrées."""
+    owners = owners or get_day_owners()
+    return {code: [d for d, _ in WEEKDAYS if owners.get(d) == code] for code in ShippingLine.values}
 
 
 def get_quay():
@@ -53,12 +90,30 @@ def quay_length():
     return float(get_quay().length_m)
 
 
-def user_line(user):
-    """Ligne maritime de l'agent connecté (None pour un planificateur sans profil)."""
+def user_role(user):
+    """Rôle de l'utilisateur : TCN, MAE, HLC, CMA ou ARK (None si inconnu)."""
     if not user or not user.is_authenticated:
         return None
     profile = getattr(user, "agent_profile", None)
-    return profile.line if profile else None
+    if profile is not None:
+        role = profile.role or profile.line
+        if role:
+            return role
+    # Compte sans profil : un administrateur Django est considéré comme agent TCN
+    if user.is_superuser or user.is_staff:
+        return Role.TCN
+    return None
+
+
+def is_tcn(user):
+    """L'utilisateur est-il un agent TCN (planificateur) ?"""
+    return user_role(user) == Role.TCN
+
+
+def user_line(user):
+    """Ligne maritime de l'agent connecté (None pour un agent TCN)."""
+    role = user_role(user)
+    return role if role in ShippingLine.values else None
 
 
 def validate_imo(value):
@@ -69,6 +124,28 @@ def validate_imo(value):
     checksum = sum(int(d) * (7 - i) for i, d in enumerate(value[:6])) % 10
     if checksum != int(value[6]):
         raise ValidationError("N° IMO invalide (clé de contrôle incorrecte).")
+
+
+# ─────────────────────────────────────────────────────────────
+#  Fenêtres prioritaires (paramétrables)
+# ─────────────────────────────────────────────────────────────
+class PriorityDay(models.Model):
+    weekday = models.PositiveSmallIntegerField("Jour", choices=WEEKDAYS, unique=True)
+    line = models.CharField("Ligne prioritaire", max_length=3, choices=ShippingLine.choices,
+                            blank=True, default="", help_text="Vide : jour libre (premier arrivé, premier servi).")
+
+    class Meta:
+        ordering = ["weekday"]
+        verbose_name = "Fenêtre prioritaire"
+        verbose_name_plural = "Fenêtres prioritaires"
+
+    def __str__(self):
+        return f"{self.get_weekday_display()} : {self.line or 'libre'}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from django.core.cache import cache
+        cache.delete(DAY_OWNERS_CACHE_KEY)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -166,16 +243,25 @@ class AgentProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="agent_profile"
     )
-    line = models.CharField("Ligne maritime", max_length=3, choices=ShippingLine.choices)
+    role = models.CharField("Rôle", max_length=3, choices=Role.choices, blank=True, default="")
+    line = models.CharField("Ligne maritime", max_length=3, choices=ShippingLine.choices, blank=True, default="",
+                            help_text="Renseignée automatiquement à partir du rôle (vide pour un agent TCN).")
     company = models.CharField("Agence", max_length=120, blank=True)
     phone = models.CharField("Téléphone", max_length=30, blank=True)
 
     class Meta:
-        verbose_name = "Agent maritime"
-        verbose_name_plural = "Agents maritimes"
+        verbose_name = "Profil utilisateur"
+        verbose_name_plural = "Profils utilisateurs"
 
     def __str__(self):
-        return f"{self.user.username} ({self.line})"
+        return f"{self.user.username} ({self.role or self.line})"
+
+    def save(self, *args, **kwargs):
+        if not self.role and self.line:
+            self.role = self.line
+        # la ligne suit le rôle : vide pour un agent TCN
+        self.line = self.role if self.role in ShippingLine.values else ""
+        super().save(*args, **kwargs)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -223,9 +309,10 @@ class VesselCall(models.Model):
         help_text="Position de l'arrière du navire le long du quai (fixée par le planificateur).",
     )
 
-    # Saisie de l'agent
-    eta = models.DateTimeField("ETA demandé")
-    etd = models.DateTimeField("ETD demandé")
+    # Saisie de l'agent de ligne (et du TCN)
+    eta = models.DateTimeField("ETA (arrivée)")
+    etb = models.DateTimeField("ETB (accostage prévu)", null=True, blank=True)
+    etd = models.DateTimeField("ETD (départ prévu)")
 
     # Calculé par le planificateur automatique (scheduler.py)
     planned_start = models.DateTimeField("Accostage prévu", null=True, blank=True)
@@ -233,9 +320,9 @@ class VesselCall(models.Model):
     is_priority = models.BooleanField("Fenêtre prioritaire", default=False)
     shift_reason = models.CharField("Motif du décalage", max_length=255, blank=True)
 
-    # Réel (saisi par le planificateur TCN)
-    actual_berthing = models.DateTimeField("Accostage réel", null=True, blank=True)
-    actual_departure = models.DateTimeField("Départ réel", null=True, blank=True)
+    # Réel (saisi par l'agent TCN)
+    actual_berthing = models.DateTimeField("ATB (accostage réel)", null=True, blank=True)
+    actual_departure = models.DateTimeField("ATD (départ réel)", null=True, blank=True)
 
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PLANNED)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -255,13 +342,18 @@ class VesselCall(models.Model):
         return f"{self.vessel.name} — {self.eta:%d/%m %H:%M}"
 
     @property
+    def berthing_request(self):
+        """Accostage demandé : ETB, ou ETA si l'ETB n'est pas renseigné."""
+        return self.etb or self.eta
+
+    @property
     def duration(self):
-        return self.etd - self.eta
+        return self.etd - self.berthing_request
 
     @property
     def delay(self):
-        if self.planned_start and self.planned_start > self.eta:
-            return self.planned_start - self.eta
+        if self.planned_start and self.planned_start > self.berthing_request:
+            return self.planned_start - self.berthing_request
         return None
 
     @property

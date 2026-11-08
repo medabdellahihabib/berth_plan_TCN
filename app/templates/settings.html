@@ -539,6 +539,68 @@ select option:disabled { color: #5a6580; }
 .user-dropdown form { margin: 0; }
 @media (max-width: 720px) { .user-meta { display: none; } }
 
+/* ═══════════════════ RÔLES / HEURES RÉELLES ═══════════════════ */
+.grid-3eq { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.role-hint { margin-left: auto; font-family: 'DM Sans', sans-serif; font-size: .72rem; font-weight: 500; color: var(--muted-light);
+    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-2); letter-spacing: 0; }
+.role-hint.tcn { color: var(--accent); border-color: rgba(240,180,41,.35); background: rgba(240,180,41,.08); }
+.tcn-section { background: linear-gradient(90deg, rgba(240,180,41,.04), transparent); margin-left: -1.5rem; margin-right: -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; padding-bottom: .25rem; }
+.calls .times { white-space: nowrap; font-size: .8rem; line-height: 1.5; }
+.calls .times span { display: block; color: var(--muted-light); }
+.calls .times em { font-style: normal; font-weight: 600; font-size: .68rem; color: var(--text); display: inline-block; width: 30px; }
+.calls .times.real em { color: var(--accent); }
+.calls th small { font-weight: 400; color: var(--muted); font-size: .68rem; }
+.real-form { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.real-form input[type=datetime-local] {
+    background: rgba(255,255,255,.035); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text);
+    font: inherit; font-size: .85rem; padding: .45rem .6rem; color-scheme: dark;
+}
+.drawer-real { border: 1px solid rgba(240,180,41,.25); background: rgba(240,180,41,.05); border-radius: 10px; padding: .8rem; margin-bottom: 1rem; }
+.drawer-real h4 { margin: 0 0 .5rem; font-size: .85rem; color: var(--accent); font-family: 'Syne', sans-serif; }
+
+/* ═══════════════════ UTILISATEURS ═══════════════════ */
+.users-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 1.25rem; align-items: start; }
+.role-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .6rem; margin-bottom: 1.25rem; }
+.role-stat { padding: .8rem 1rem; box-shadow: inset 0 3px 0 var(--line); }
+.role-stat .n { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.4rem; }
+.role-stat .l { font-size: .78rem; color: var(--muted-light); }
+.role-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; }
+.role-card { position: relative; }
+.role-card input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.role-card span {
+    display: flex; align-items: center; gap: .5rem; padding: .6rem .7rem; border-radius: 9px; font-size: .85rem;
+    border: 1px solid var(--border-2); background: rgba(255,255,255,.02); color: var(--muted-light); transition: all .15s;
+}
+.role-card span i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+.role-card input:checked + span { border-color: var(--line); color: var(--text); background: color-mix(in srgb, var(--line) 12%, transparent); }
+.role-card input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.user-row-name { display: flex; align-items: center; gap: .6rem; }
+.user-row-name .user-avatar { width: 30px; height: 30px; font-size: .85rem; background: var(--line); }
+.user-row-name small { display: block; color: var(--muted); font-size: .75rem; }
+.inactive td { opacity: .5; }
+.check-field { display: flex; align-items: center; gap: .5rem; font-size: .88rem; color: var(--muted-light); }
+.check-field input { accent-color: var(--accent); width: 16px; height: 16px; }
+@media (max-width: 1100px) { .users-layout { grid-template-columns: 1fr; } .role-stats { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) { .grid-3eq { grid-template-columns: 1fr; } }
+
+/* Fenêtres prioritaires (paramétrage) */
+.window-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .6rem; }
+.window-day {
+    display: flex; flex-direction: column; gap: .45rem; padding: .7rem; border-radius: 10px; cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+    background: color-mix(in srgb, var(--line) 9%, transparent); box-shadow: inset 0 3px 0 var(--line);
+    transition: background .15s, border-color .15s;
+}
+.window-day .wd-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+.window-select {
+    width: 100%; background: rgba(7,10,18,.5); border: 1px solid var(--border-2); border-radius: 8px;
+    color: var(--line); font: inherit; font-size: .82rem; font-weight: 500; padding: .45rem .5rem; color-scheme: dark;
+}
+.window-select:focus { outline: none; border-color: var(--accent); }
+.window-summary { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+@media (max-width: 1100px) { .window-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 720px)  { .window-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 </style>
     
 </head>
@@ -557,7 +619,9 @@ select option:disabled { color: #5a6580; }
             <a href="{{ home_url }}" class="{% if request.path == home_url %}active{% endif %}"><i class="fas fa-ship"></i><span>Berth plan</span></a>
             <a href="{{ calls_url }}" class="{% if request.path == calls_url %}active{% endif %}"><i class="fas fa-list"></i><span>Escales</span></a>
             <a href="{{ create_url }}" class="{% if request.path == create_url %}active{% endif %}"><i class="fas fa-plus"></i><span>Déclarer une escale</span></a>
-            {% if user.is_staff %}<a href="{{ settings_url }}" class="{% if request.path == settings_url %}active{% endif %}"><i class="fas fa-sliders"></i><span>Paramétrage</span></a>{% endif %}
+            {% if is_tcn %}{% url 'users_list' as users_url %}
+            <a href="{{ settings_url }}" class="{% if request.path == settings_url %}active{% endif %}"><i class="fas fa-sliders"></i><span>Paramétrage</span></a>
+            <a href="{{ users_url }}" class="{% if users_url in request.path %}active{% endif %}"><i class="fas fa-users"></i><span>Utilisateurs</span></a>{% endif %}
         </nav>
 
         <div class="user-menu" id="userMenu">
@@ -566,7 +630,7 @@ select option:disabled { color: #5a6580; }
                 <div class="user-avatar">{{ user.username|first|upper }}</div>
                 <div class="user-meta">
                     <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                    <div class="user-role">{% if user.agent_profile %}{{ user.agent_profile.get_line_display }}{% elif user.is_staff %}Planificateur TCN{% endif %}</div>
+                    <div class="user-role">{{ user_role_label|default:"Aucun rôle" }}</div>
                 </div>
                 <i class="fas fa-chevron-down user-chevron"></i>
             </button>
@@ -579,15 +643,14 @@ select option:disabled { color: #5a6580; }
                         <div class="user-role">@{{ user.username }}</div>
                     </div>
                 </div>
-                {% if user.agent_profile %}
-                    <div class="dropdown-info"><span class="line-pill" data-line="{{ user.agent_profile.line }}"><span class="dot"></span>{{ user.agent_profile.get_line_display }}</span></div>
-                {% elif user.is_staff %}
-                    <div class="dropdown-info"><span class="line-pill"><span class="dot"></span>Planificateur TCN</span></div>
+                {% if user_role %}
+                    <div class="dropdown-info"><span class="line-pill" style="--line:{{ role_color }}"><span class="dot"></span>{{ user_role_label }}</span></div>
                 {% endif %}
                 <div class="dropdown-sep"></div>
-                <a class="dropdown-item-custom" href="{% url 'calls_list' %}" role="menuitem"><i class="fas fa-list"></i> {% if user.is_staff %}Toutes les escales{% else %}Mes escales{% endif %}</a>
-                {% if user.is_staff %}
+                <a class="dropdown-item-custom" href="{% url 'calls_list' %}" role="menuitem"><i class="fas fa-list"></i> {% if is_tcn %}Toutes les escales{% else %}Mes escales{% endif %}</a>
+                {% if is_tcn %}
                 <a class="dropdown-item-custom" href="{% url 'quay_settings' %}" role="menuitem"><i class="fas fa-sliders"></i> Paramétrage</a>
+                <a class="dropdown-item-custom" href="{% url 'users_list' %}" role="menuitem"><i class="fas fa-users"></i> Utilisateurs et rôles</a>
                 {% endif %}
                 <div class="dropdown-sep"></div>
                 {# La déconnexion se fait en POST (sécurité Django) : un formulaire plutôt qu'un simple lien #}
@@ -617,8 +680,8 @@ select option:disabled { color: #5a6580; }
     <main class="page">
         <div class="page-head">
     <div>
-        <h1>Paramétrage du quai</h1>
-        <p>Métrage du quai, tirant d'eau maximum et bollards. Le berth plan utilise ces valeurs immédiatement.</p>
+        <h1>Paramétrage</h1>
+        <p>Fenêtres prioritaires, métrage du quai, tirant d'eau maximum et bollards. Le berth plan utilise ces valeurs immédiatement.</p>
     </div>
     <a href="{% url 'home' %}" class="btn"><i class="fas fa-ship"></i> Voir le berth plan</a>
 </div>
@@ -639,6 +702,28 @@ select option:disabled { color: #5a6580; }
             <span class="muted-txt" id="previewInfo"></span>
         </div>
         <div class="quay-preview-wrap"><svg id="quayPreview" class="quay-preview" role="img" aria-label="Aperçu du quai et des bollards"></svg></div>
+    </section>
+
+    <!-- Fenêtres prioritaires -->
+    <section class="panel form-card" style="margin-bottom:1.25rem">
+        <h2><span class="step"><i class="fas fa-calendar-week"></i></span> Fenêtres prioritaires
+            <span class="role-hint">une ligne par jour, ou jour libre</span></h2>
+        <p class="help-txt">Le navire d'une ligne dont l'ETA tombe dans sa fenêtre passe avant les autres lignes ce jour-là.
+            Un jour libre suit la règle « premier arrivé, premier servi ».</p>
+        <div class="window-grid">
+            {% for w in windows %}
+            <label class="window-day" style="--line:{{ w.color }}">
+                <span class="wd-name">{{ w.name }}</span>
+                <select name="window_{{ w.day }}" class="window-select" aria-label="Ligne prioritaire du {{ w.name }}">
+                    <option value="" {% if not w.owner %}selected{% endif %} data-color="{{ free_color }}">Libre</option>
+                    {% for code, label, color in line_choices %}
+                    <option value="{{ code }}" {% if w.owner == code %}selected{% endif %} data-color="{{ color }}">{{ code }} · {{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            {% endfor %}
+        </div>
+        <div class="window-summary" id="windowSummary"></div>
     </section>
 
     <div class="settings-grid">
@@ -820,6 +905,21 @@ select option:disabled { color: #5a6580; }
         tr.querySelector('[name$="-name"]').focus();
         draw();
     });
+    // Fenêtres : couleur du jour + résumé par ligne
+    const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    function drawWindows() {
+        const per = {};
+        document.querySelectorAll('.window-select').forEach((sel, i) => {
+            const opt = sel.selectedOptions[0];
+            sel.closest('.window-day').style.setProperty('--line', opt.dataset.color);
+            const key = sel.value || 'Libre';
+            (per[key] = per[key] || { color: opt.dataset.color, days: [] }).days.push(DAYS[i]);
+        });
+        document.getElementById('windowSummary').innerHTML = Object.entries(per)
+            .map(([k, v]) => `<span class="line-pill" style="--line:${v.color}"><span class="dot"></span>${esc(k)} : ${v.days.join(', ')}</span>`).join('');
+    }
+    document.querySelectorAll('.window-select').forEach((sel) => sel.addEventListener('change', drawWindows));
+    drawWindows();
     form.addEventListener('input', draw);
     form.addEventListener('change', draw);
     window.addEventListener('resize', draw);

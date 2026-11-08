@@ -7,16 +7,19 @@ from django.core.cache import cache
 from django.db import IntegrityError
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import render as django_render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from .forms import BollardFormSet, QuaySettingsForm, VesselCallForm
+from .forms import DT_FMT, BollardFormSet, QuaySettingsForm, UserForm, VesselCallForm
 from .models import (
-    DAY_OWNER, LINE_COLORS, PRIORITY_DAYS, ShippingLine, VesselCall, berth_span, get_quay, user_line,
+    FREE_COLOR, LINE_COLORS, WEEKDAYS, PriorityDay, Role, ShippingLine, VesselCall,
+    berth_span, get_day_owners, get_quay, is_tcn, line_days, user_line, user_role,
 )
 from .scheduler import (
     get_working_call, recompute_plan, window_owner, working_interval,
@@ -25,6 +28,33 @@ from .scheduler import (
 S = VesselCall.Status
 DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
 DAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+
+
+def render(request, template, context=None):
+    """render() + rôle de l'utilisateur, disponible dans tous les templates."""
+    context = dict(context or {})
+    role = user_role(request.user)
+    context.setdefault("is_tcn", role == Role.TCN)
+    context.setdefault("user_role", role)
+    context.setdefault("user_role_label", Role(role).label if role else "")
+    context.setdefault("role_color", LINE_COLORS.get(role, "#f0b429"))
+    return django_render(request, template, context)
+
+
+def _tcn_required(request):
+    """Renvoie une redirection si l'utilisateur n'est pas agent TCN, sinon None."""
+    if not is_tcn(request.user):
+        messages.error(request, "Cette page est réservée aux agents TCN.")
+        return redirect("home")
+    return None
+
+
+def _parse_dt(value):
+    """Lit une date/heure saisie dans un champ datetime-local (heure locale du terminal)."""
+    try:
+        return timezone.make_aware(datetime.strptime(value, DT_FMT))
+    except (TypeError, ValueError):
+        return None
 
 
 def _fmt(dt):
@@ -36,13 +66,14 @@ def _iso(dt):
 
 
 def _lines_payload():
+    days = line_days()
     return {
         code: {
             "code": code,
             "name": label,
             "color": LINE_COLORS[code],
-            "days": list(PRIORITY_DAYS[code]),
-            "day_names": [DAY_NAMES[d] for d in PRIORITY_DAYS[code]],
+            "days": days[code],
+            "day_names": [DAY_NAMES[d] for d in days[code]] or ["aucun jour"],
         }
         for code, label in ShippingLine.choices
     }
@@ -60,13 +91,14 @@ def _quay_payload(quay):
 
 def _week_strip(days=7):
     today = timezone.localdate()
+    owners = get_day_owners()
     out = []
     for i in range(days):
         d = today + timedelta(days=i)
-        owner = DAY_OWNER[d.weekday()]
+        owner = owners.get(d.weekday())
         out.append({
             "date": d.isoformat(), "short": DAY_SHORT[d.weekday()], "num": d.strftime("%d/%m"),
-            "owner": owner, "color": LINE_COLORS[owner],
+            "owner": owner or "Libre", "color": LINE_COLORS.get(owner, FREE_COLOR),
         })
     return out
 
@@ -80,7 +112,9 @@ def _back(request, fallback="home"):
 
 
 def _can_edit(call, user):
-    return call.status == S.PLANNED and (user.is_staff or call.agent_id == user.id)
+    if is_tcn(user):
+        return call.status != S.CANCELLED          # le TCN peut aussi saisir ATB / ATD
+    return call.status == S.PLANNED and call.agent_id == user.id
 
 
 # ─────────────────────────────────────────────────────────────
@@ -135,8 +169,8 @@ def home(request):
         "week_count": planned.filter(planned_start__lt=now + timedelta(days=7)).count(),
         "lines": _lines_payload().values(),
         "my_line": user_line(request.user),
-        "today_owner": today_owner,
-        "today_color": LINE_COLORS[today_owner],
+        "today_owner": today_owner or "Libre",
+        "today_color": LINE_COLORS.get(today_owner, FREE_COLOR),
         "quay": get_quay(),
         "focus": request.GET.get("focus", ""),
     }
@@ -166,7 +200,7 @@ def calls_list(request):
     q = request.GET.get("q", "").strip()
 
     calls = VesselCall.objects.select_related("vessel", "agent")
-    if not request.user.is_staff:
+    if not is_tcn(request.user):
         calls = calls.filter(agent=request.user)
     base = calls
     statuses = STATUS_FILTERS[status][1]
@@ -202,13 +236,14 @@ def calls_list(request):
 # ─────────────────────────────────────────────────────────────
 @login_required
 def quay_settings(request):
-    if not request.user.is_staff:
-        messages.error(request, "Le paramétrage est réservé au planificateur TCN.")
-        return redirect("home")
+    denied = _tcn_required(request)
+    if denied:
+        return denied
 
     quay = get_quay()
     formset = None
     if request.method == "POST":
+        _save_windows(request)
         action = request.POST.get("action", "save")
         form = QuaySettingsForm(request.POST, instance=quay)
         if action == "generate":
@@ -235,12 +270,38 @@ def quay_settings(request):
 
     if formset is None:
         formset = BollardFormSet(instance=quay)
+    owners = get_day_owners()
     return render(request, "settings.html", {
         "form": form,
         "formset": formset,
         "quay": quay,
         "quay_json": _quay_payload(get_quay()),
+        "windows": [
+            {"day": d, "name": name, "owner": owners.get(d) or "",
+             "color": LINE_COLORS.get(owners.get(d), FREE_COLOR)}
+            for d, name in WEEKDAYS
+        ],
+        "line_choices": [(code, label, LINE_COLORS[code]) for code, label in ShippingLine.choices],
+        "free_color": FREE_COLOR,
     })
+
+
+def _save_windows(request):
+    """Enregistre les fenêtres prioritaires (un champ « window_<jour> » par jour)."""
+    if not any(f"window_{d}" in request.POST for d, _ in WEEKDAYS):
+        return
+    valid = set(ShippingLine.values)
+    changed = []
+    owners = get_day_owners()
+    for d, name in WEEKDAYS:
+        value = request.POST.get(f"window_{d}", "")
+        value = value if value in valid else ""
+        if (owners.get(d) or "") != value:
+            PriorityDay.objects.update_or_create(weekday=d, defaults={"line": value})
+            changed.append(f"{name} → {value or 'libre'}")
+    if changed:
+        recompute_plan()
+        messages.success(request, "Fenêtres prioritaires mises à jour : " + ", ".join(changed) + ".")
 
 
 def _num_fr(v):
@@ -283,6 +344,12 @@ def plan_pdf(request):
 
 
 def _feedback(request, call):
+    if call.status == S.COMPLETED:
+        messages.success(request, f"{call.vessel.name} : ATD enregistré le {_fmt(call.actual_departure)}, escale terminée.")
+        return
+    if call.status == S.WORKING:
+        messages.success(request, f"{call.vessel.name} : ATB enregistré le {_fmt(call.actual_berthing)}, navire à quai.")
+        return
     start = _fmt(call.planned_start)
     owner = window_owner(call.eta)
     if call.shift_reason:
@@ -296,8 +363,8 @@ def _feedback(request, call):
             f"{call.vessel.name} est planifié le {start}, dans la fenêtre prioritaire {call.line}.",
         )
     else:
-        messages.success(request, f"{call.vessel.name} est planifié à son ETA, le {start}.")
-        if owner != call.line:
+        messages.success(request, f"{call.vessel.name} est planifié à son ETB, le {start}.")
+        if owner and owner != call.line:
             messages.info(
                 request,
                 f"Cet ETA tombe dans la fenêtre {owner}. Si un navire {owner} est déclaré sur ce "
@@ -318,7 +385,7 @@ def _form_context(form, title, call=None):
         "call": call,
         "vessels_json": vessels,
         "lines_json": _lines_payload(),
-        "day_owner_json": {str(k): v for k, v in DAY_OWNER.items()},
+        "day_owner_json": {str(k): v for k, v in get_day_owners().items()},
         "working": working,
         "working_json": {
             "id": working.pk, "name": working.vessel.name, "line": working.line,
@@ -333,8 +400,8 @@ def _form_context(form, title, call=None):
 
 @login_required
 def call_create(request):
-    if not user_line(request.user) and not request.user.is_staff:
-        messages.error(request, "Votre compte n'est rattaché à aucune ligne maritime. Contactez TCN.")
+    if not user_role(request.user):
+        messages.error(request, "Votre compte n'a pas de rôle (TCN ou ligne maritime). Contactez TCN.")
         return redirect("home")
 
     form = VesselCallForm(request.POST or None, user=request.user)
@@ -368,7 +435,7 @@ def call_edit(request, pk):
 @require_POST
 def call_cancel(request, pk):
     call = get_object_or_404(VesselCall, pk=pk)
-    if not _can_edit(call, request.user):
+    if not _can_edit(call, request.user) or call.status != S.PLANNED:
         return HttpResponseForbidden("Action non autorisée.")
     call.status = S.CANCELLED
     call.save(update_fields=["status", "updated_at"])
@@ -380,46 +447,91 @@ def call_cancel(request, pk):
 @login_required
 @require_POST
 def call_berth(request, pk):
-    """Planificateur TCN : le navire accoste, début des opérations."""
-    if not request.user.is_staff:
-        return HttpResponseForbidden("Réservé au planificateur TCN.")
+    """Agent TCN : saisie de l'ATB (accostage réel), début des opérations."""
+    if not is_tcn(request.user):
+        return HttpResponseForbidden("Réservé aux agents TCN.")
     call = get_object_or_404(VesselCall.objects.select_related("vessel"), pk=pk, status=S.PLANNED)
     working = get_working_call()
     if working:
-        messages.error(request, f"{working.vessel.name} est déjà en opération au quai.")
+        messages.error(request, f"{working.vessel.name} est déjà à quai. Saisissez son ATD d'abord.")
         return _back(request)
 
     now = timezone.now()
+    atb = _parse_dt(request.POST.get("atb")) or now
+    if atb > now + timedelta(minutes=15):
+        messages.error(request, "L'ATB est une heure réelle : elle ne peut pas être dans le futur.")
+        return _back(request)
     call.status = S.WORKING
-    call.actual_berthing = now
-    call.planned_start = now
-    call.planned_end = now + call.duration
+    call.actual_berthing = atb
+    call.planned_start = atb
+    call.planned_end = max(call.etd, atb + timedelta(hours=1))
     call.shift_reason = ""
     try:
         call.save()
     except IntegrityError:
-        messages.error(request, "Un autre navire vient d'être mis en opération.")
+        messages.error(request, "Un autre navire vient d'être mis à quai.")
         return _back(request)
     recompute_plan()
-    messages.success(request, f"{call.vessel.name} est à quai, opérations démarrées.")
+    messages.success(request, f"ATB enregistré : {call.vessel.name} à quai depuis le {_fmt(atb)}.")
     return _back(request)
 
 
 @login_required
 @require_POST
 def call_complete(request, pk):
-    """Planificateur TCN : fin des opérations, le quai se libère."""
-    if not request.user.is_staff:
-        return HttpResponseForbidden("Réservé au planificateur TCN.")
+    """Agent TCN : saisie de l'ATD (départ réel), le quai se libère."""
+    if not is_tcn(request.user):
+        return HttpResponseForbidden("Réservé aux agents TCN.")
     call = get_object_or_404(VesselCall.objects.select_related("vessel"), pk=pk, status=S.WORKING)
     now = timezone.now()
+    atd = _parse_dt(request.POST.get("atd")) or now
+    if atd > now + timedelta(minutes=15):
+        messages.error(request, "L'ATD est une heure réelle : elle ne peut pas être dans le futur.")
+        return _back(request)
+    if call.actual_berthing and atd <= call.actual_berthing:
+        messages.error(request, "L'ATD doit être après l'ATB.")
+        return _back(request)
     call.status = S.COMPLETED
-    call.actual_departure = now
-    call.planned_end = now
+    call.actual_departure = atd
+    call.planned_end = atd
     call.save()
     recompute_plan()
-    messages.success(request, f"Opérations terminées pour {call.vessel.name}. Le quai est libre.")
+    messages.success(request, f"ATD enregistré : {call.vessel.name} a quitté le quai le {_fmt(atd)}.")
     return _back(request)
+
+
+# ─────────────────────────────────────────────────────────────
+#  Utilisateurs et rôles (agent TCN)
+# ─────────────────────────────────────────────────────────────
+@login_required
+def users_list(request, pk=None):
+    denied = _tcn_required(request)
+    if denied:
+        return denied
+    User = get_user_model()
+    editing = get_object_or_404(User, pk=pk) if pk else None
+
+    form = UserForm(request.POST or None, instance=editing, current_user=request.user)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        if editing:
+            messages.success(request, f"Utilisateur {user.username} mis à jour.")
+        else:
+            messages.success(request, f"Utilisateur {user.username} créé avec le rôle {Role(form.cleaned_data['role']).label}.")
+        return redirect("users_list")
+
+    users = list(User.objects.select_related("agent_profile").order_by("username"))
+    for u in users:
+        u.role_code = user_role(u)
+        u.role_label = Role(u.role_code).label if u.role_code else "Aucun rôle"
+        u.role_color = LINE_COLORS.get(u.role_code, "#f0b429" if u.role_code else "#5a6580")
+    counts = {code: sum(1 for u in users if u.role_code == code) for code, _ in Role.choices}
+    return render(request, "users.html", {
+        "form": form,
+        "editing": editing,
+        "users": users,
+        "role_counts": [(code, label, counts[code], LINE_COLORS.get(code, "#f0b429")) for code, label in Role.choices],
+    })
 
 
 # ─────────────────────────────────────────────────────────────
@@ -430,7 +542,7 @@ def _serialize(call, user, now, quay):
     pos_from, pos_to, b_from, b_to = berth_span(call, quay)
     if call.status == S.WORKING:
         start, end = working_interval(call, now)
-    delay = (start - call.eta).total_seconds() / 60 if call.status == S.PLANNED else 0
+    delay = (start - call.berthing_request).total_seconds() / 60 if call.status == S.PLANNED else 0
     return {
         "id": call.pk,
         "vessel": call.vessel.name,
@@ -447,7 +559,10 @@ def _serialize(call, user, now, quay):
         "color": LINE_COLORS.get(call.line),
         "agent": call.agent.get_full_name() or call.agent.username if call.agent else "—",
         "eta": _iso(call.eta),
+        "etb": _iso(call.berthing_request),
         "etd": _iso(call.etd),
+        "atb": _iso(call.actual_berthing),
+        "atd": _iso(call.actual_departure),
         "start": _iso(start),
         "end": _iso(end),
         "status": call.status,
@@ -485,11 +600,13 @@ def api_plan(request):
             Q(status=S.WORKING)
             | Q(planned_start__lt=range_end, planned_end__gt=range_start)
             | Q(eta__lt=range_end, etd__gt=range_start, status=S.PLANNED)
+            | Q(etb__lt=range_end, etd__gt=range_start, status=S.PLANNED)
         )
         .order_by("planned_start")
     )
 
     windows = []
+    owners = get_day_owners()
     for i in range(days):
         d = start_date + timedelta(days=i)
         ws = timezone.make_aware(datetime.combine(d, time.min))
@@ -497,7 +614,7 @@ def api_plan(request):
             "date": d.isoformat(),
             "start": _iso(ws),
             "end": _iso(ws + timedelta(days=1)),
-            "owner": DAY_OWNER[d.weekday()],
+            "owner": owners.get(d.weekday()),
             "day_name": DAY_NAMES[d.weekday()],
             "day_short": DAY_SHORT[d.weekday()],
             "num": d.strftime("%d/%m"),
@@ -510,8 +627,9 @@ def api_plan(request):
         "range": {"start": _iso(range_start), "end": _iso(range_end), "days": days},
         "quay": _quay_payload(quay),
         "lines": _lines_payload(),
+        "free_color": FREE_COLOR,
         "windows": windows,
         "working_id": working.pk if working else None,
         "calls": [_serialize(c, request.user, now, quay) for c in calls],
-        "user": {"line": user_line(request.user), "is_staff": request.user.is_staff},
+        "user": {"line": user_line(request.user), "role": user_role(request.user), "is_tcn": is_tcn(request.user)},
     })

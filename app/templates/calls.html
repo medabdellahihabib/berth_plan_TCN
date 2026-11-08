@@ -539,6 +539,68 @@ select option:disabled { color: #5a6580; }
 .user-dropdown form { margin: 0; }
 @media (max-width: 720px) { .user-meta { display: none; } }
 
+/* ═══════════════════ RÔLES / HEURES RÉELLES ═══════════════════ */
+.grid-3eq { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.role-hint { margin-left: auto; font-family: 'DM Sans', sans-serif; font-size: .72rem; font-weight: 500; color: var(--muted-light);
+    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-2); letter-spacing: 0; }
+.role-hint.tcn { color: var(--accent); border-color: rgba(240,180,41,.35); background: rgba(240,180,41,.08); }
+.tcn-section { background: linear-gradient(90deg, rgba(240,180,41,.04), transparent); margin-left: -1.5rem; margin-right: -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; padding-bottom: .25rem; }
+.calls .times { white-space: nowrap; font-size: .8rem; line-height: 1.5; }
+.calls .times span { display: block; color: var(--muted-light); }
+.calls .times em { font-style: normal; font-weight: 600; font-size: .68rem; color: var(--text); display: inline-block; width: 30px; }
+.calls .times.real em { color: var(--accent); }
+.calls th small { font-weight: 400; color: var(--muted); font-size: .68rem; }
+.real-form { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.real-form input[type=datetime-local] {
+    background: rgba(255,255,255,.035); border: 1px solid var(--border-2); border-radius: 8px; color: var(--text);
+    font: inherit; font-size: .85rem; padding: .45rem .6rem; color-scheme: dark;
+}
+.drawer-real { border: 1px solid rgba(240,180,41,.25); background: rgba(240,180,41,.05); border-radius: 10px; padding: .8rem; margin-bottom: 1rem; }
+.drawer-real h4 { margin: 0 0 .5rem; font-size: .85rem; color: var(--accent); font-family: 'Syne', sans-serif; }
+
+/* ═══════════════════ UTILISATEURS ═══════════════════ */
+.users-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 1.25rem; align-items: start; }
+.role-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .6rem; margin-bottom: 1.25rem; }
+.role-stat { padding: .8rem 1rem; box-shadow: inset 0 3px 0 var(--line); }
+.role-stat .n { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.4rem; }
+.role-stat .l { font-size: .78rem; color: var(--muted-light); }
+.role-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; }
+.role-card { position: relative; }
+.role-card input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.role-card span {
+    display: flex; align-items: center; gap: .5rem; padding: .6rem .7rem; border-radius: 9px; font-size: .85rem;
+    border: 1px solid var(--border-2); background: rgba(255,255,255,.02); color: var(--muted-light); transition: all .15s;
+}
+.role-card span i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+.role-card input:checked + span { border-color: var(--line); color: var(--text); background: color-mix(in srgb, var(--line) 12%, transparent); }
+.role-card input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.user-row-name { display: flex; align-items: center; gap: .6rem; }
+.user-row-name .user-avatar { width: 30px; height: 30px; font-size: .85rem; background: var(--line); }
+.user-row-name small { display: block; color: var(--muted); font-size: .75rem; }
+.inactive td { opacity: .5; }
+.check-field { display: flex; align-items: center; gap: .5rem; font-size: .88rem; color: var(--muted-light); }
+.check-field input { accent-color: var(--accent); width: 16px; height: 16px; }
+@media (max-width: 1100px) { .users-layout { grid-template-columns: 1fr; } .role-stats { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) { .grid-3eq { grid-template-columns: 1fr; } }
+
+/* Fenêtres prioritaires (paramétrage) */
+.window-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .6rem; }
+.window-day {
+    display: flex; flex-direction: column; gap: .45rem; padding: .7rem; border-radius: 10px; cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+    background: color-mix(in srgb, var(--line) 9%, transparent); box-shadow: inset 0 3px 0 var(--line);
+    transition: background .15s, border-color .15s;
+}
+.window-day .wd-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+.window-select {
+    width: 100%; background: rgba(7,10,18,.5); border: 1px solid var(--border-2); border-radius: 8px;
+    color: var(--line); font: inherit; font-size: .82rem; font-weight: 500; padding: .45rem .5rem; color-scheme: dark;
+}
+.window-select:focus { outline: none; border-color: var(--accent); }
+.window-summary { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+@media (max-width: 1100px) { .window-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 720px)  { .window-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 </style>
     
 </head>
@@ -557,7 +619,9 @@ select option:disabled { color: #5a6580; }
             <a href="{{ home_url }}" class="{% if request.path == home_url %}active{% endif %}"><i class="fas fa-ship"></i><span>Berth plan</span></a>
             <a href="{{ calls_url }}" class="{% if request.path == calls_url %}active{% endif %}"><i class="fas fa-list"></i><span>Escales</span></a>
             <a href="{{ create_url }}" class="{% if request.path == create_url %}active{% endif %}"><i class="fas fa-plus"></i><span>Déclarer une escale</span></a>
-            {% if user.is_staff %}<a href="{{ settings_url }}" class="{% if request.path == settings_url %}active{% endif %}"><i class="fas fa-sliders"></i><span>Paramétrage</span></a>{% endif %}
+            {% if is_tcn %}{% url 'users_list' as users_url %}
+            <a href="{{ settings_url }}" class="{% if request.path == settings_url %}active{% endif %}"><i class="fas fa-sliders"></i><span>Paramétrage</span></a>
+            <a href="{{ users_url }}" class="{% if users_url in request.path %}active{% endif %}"><i class="fas fa-users"></i><span>Utilisateurs</span></a>{% endif %}
         </nav>
 
         <div class="user-menu" id="userMenu">
@@ -566,7 +630,7 @@ select option:disabled { color: #5a6580; }
                 <div class="user-avatar">{{ user.username|first|upper }}</div>
                 <div class="user-meta">
                     <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                    <div class="user-role">{% if user.agent_profile %}{{ user.agent_profile.get_line_display }}{% elif user.is_staff %}Planificateur TCN{% endif %}</div>
+                    <div class="user-role">{{ user_role_label|default:"Aucun rôle" }}</div>
                 </div>
                 <i class="fas fa-chevron-down user-chevron"></i>
             </button>
@@ -579,15 +643,14 @@ select option:disabled { color: #5a6580; }
                         <div class="user-role">@{{ user.username }}</div>
                     </div>
                 </div>
-                {% if user.agent_profile %}
-                    <div class="dropdown-info"><span class="line-pill" data-line="{{ user.agent_profile.line }}"><span class="dot"></span>{{ user.agent_profile.get_line_display }}</span></div>
-                {% elif user.is_staff %}
-                    <div class="dropdown-info"><span class="line-pill"><span class="dot"></span>Planificateur TCN</span></div>
+                {% if user_role %}
+                    <div class="dropdown-info"><span class="line-pill" style="--line:{{ role_color }}"><span class="dot"></span>{{ user_role_label }}</span></div>
                 {% endif %}
                 <div class="dropdown-sep"></div>
-                <a class="dropdown-item-custom" href="{% url 'calls_list' %}" role="menuitem"><i class="fas fa-list"></i> {% if user.is_staff %}Toutes les escales{% else %}Mes escales{% endif %}</a>
-                {% if user.is_staff %}
+                <a class="dropdown-item-custom" href="{% url 'calls_list' %}" role="menuitem"><i class="fas fa-list"></i> {% if is_tcn %}Toutes les escales{% else %}Mes escales{% endif %}</a>
+                {% if is_tcn %}
                 <a class="dropdown-item-custom" href="{% url 'quay_settings' %}" role="menuitem"><i class="fas fa-sliders"></i> Paramétrage</a>
+                <a class="dropdown-item-custom" href="{% url 'users_list' %}" role="menuitem"><i class="fas fa-users"></i> Utilisateurs et rôles</a>
                 {% endif %}
                 <div class="dropdown-sep"></div>
                 {# La déconnexion se fait en POST (sécurité Django) : un formulaire plutôt qu'un simple lien #}
@@ -617,8 +680,8 @@ select option:disabled { color: #5a6580; }
     <main class="page">
         <div class="page-head">
     <div>
-        <h1>{% if user.is_staff %}Toutes les escales{% else %}Mes escales{% endif %}</h1>
-        <p>{% if user.is_staff %}Escales déclarées par toutes les lignes.{% else %}Escales déclarées avec votre compte.{% endif %}</p>
+        <h1>{% if is_tcn %}Toutes les escales{% else %}Mes escales{% endif %}</h1>
+        <p>{% if is_tcn %}Escales déclarées par toutes les lignes.{% else %}Escales déclarées avec votre compte.{% endif %}</p>
     </div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
         <a href="{% url 'home' %}" class="btn"><i class="fas fa-ship"></i> Berth plan</a>
@@ -649,7 +712,7 @@ select option:disabled { color: #5a6580; }
     <table class="calls">
         <thead>
             <tr>
-                <th>Navire</th><th>Ligne</th><th>TE</th><th>Bollards</th><th>ETA / ETD demandés</th><th>Accostage prévu</th><th>Statut</th><th>Remarque</th><th></th>
+                <th>Navire</th><th>Ligne</th><th>TE</th><th>Bollards</th><th>ETA · ETB · ETD<br><small>agent de ligne</small></th><th>Accostage prévu</th><th>ATB · ATD<br><small>agent TCN</small></th><th>Statut</th><th>Remarque</th><th></th>
             </tr>
         </thead>
         <tbody>
@@ -664,8 +727,16 @@ select option:disabled { color: #5a6580; }
                 <td>{{ c.get_line_display }}</td>
                 <td>{% if c.draft %}{{ c.draft|floatformat:1 }} m{% else %}<span class="muted">—</span>{% endif %}</td>
                 <td class="muted">{{ c.bollard_from.name|default:"—" }} → {{ c.bollard_to.name|default:"—" }}</td>
-                <td class="muted">{{ c.eta|date:"d/m H:i" }} → {{ c.etd|date:"d/m H:i" }}</td>
+                <td class="times">
+                    <span><em>ETA</em> {{ c.eta|date:"d/m H:i" }}</span>
+                    <span><em>ETB</em> {{ c.berthing_request|date:"d/m H:i" }}</span>
+                    <span><em>ETD</em> {{ c.etd|date:"d/m H:i" }}</span>
+                </td>
                 <td>{{ c.planned_start|date:"D d/m H:i" }} → {{ c.planned_end|date:"d/m H:i" }}</td>
+                <td class="times real">
+                    <span><em>ATB</em> {% if c.actual_berthing %}{{ c.actual_berthing|date:"d/m H:i" }}{% else %}—{% endif %}</span>
+                    <span><em>ATD</em> {% if c.actual_departure %}{{ c.actual_departure|date:"d/m H:i" }}{% else %}—{% endif %}</span>
+                </td>
                 <td><span class="status status-{{ c.status }}">{{ c.get_status_display }}</span></td>
                 <td>
                     {% if c.shift_reason %}<span class="shift"><i class="fas fa-clock-rotate-left"></i> {{ c.shift_reason }}</span>
@@ -677,18 +748,20 @@ select option:disabled { color: #5a6580; }
                         <a class="btn btn-sm" href="{% url 'home' %}?focus={{ c.pk }}" title="Voir sur le berth plan"><i class="fas fa-location-crosshairs"></i></a>
                         {% if c.can_edit %}
                         <a class="btn btn-sm" href="{% url 'call_edit' c.pk %}" title="Modifier"><i class="fas fa-pen"></i></a>
+                        {% if c.status == 'PLANNED' %}
                         <form method="post" action="{% url 'call_cancel' c.pk %}" onsubmit="return confirm('Annuler cette escale ?')">
                             {% csrf_token %}<button class="btn btn-sm btn-danger" title="Annuler l'escale"><i class="fas fa-xmark"></i></button>
                         </form>
                         {% endif %}
-                        {% if user.is_staff and c.status == 'PLANNED' and not working %}
-                        <form method="post" action="{% url 'call_berth' c.pk %}" onsubmit="return confirm('Confirmer l\'accostage de {{ c.vessel.name|escapejs }} ?')">
-                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="Démarrer les opérations"><i class="fas fa-anchor"></i></button>
+                        {% endif %}
+                        {% if is_tcn and c.status == 'PLANNED' and not working %}
+                        <form method="post" action="{% url 'call_berth' c.pk %}" onsubmit="return confirm('Enregistrer l\'ATB de {{ c.vessel.name|escapejs }} à l\'heure actuelle ?')">
+                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="ATB maintenant (accostage réel)"><i class="fas fa-anchor"></i> ATB</button>
                         </form>
                         {% endif %}
-                        {% if user.is_staff and c.status == 'WORKING' %}
-                        <form method="post" action="{% url 'call_complete' c.pk %}" onsubmit="return confirm('Terminer les opérations ?')">
-                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="Terminer les opérations"><i class="fas fa-flag-checkered"></i></button>
+                        {% if is_tcn and c.status == 'WORKING' %}
+                        <form method="post" action="{% url 'call_complete' c.pk %}" onsubmit="return confirm('Enregistrer l\'ATD à l\'heure actuelle ?')">
+                            {% csrf_token %}<button class="btn btn-sm btn-ok" title="ATD maintenant (départ réel)"><i class="fas fa-flag-checkered"></i> ATD</button>
                         </form>
                         {% endif %}
                     </div>

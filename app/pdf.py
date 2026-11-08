@@ -14,7 +14,7 @@ from reportlab.lib.colors import HexColor, white
 from reportlab.lib.pagesizes import A3, landscape
 from reportlab.pdfgen import canvas
 
-from .models import DAY_OWNER, LINE_COLORS, PRIORITY_DAYS, ShippingLine, VesselCall, berth_span, get_quay
+from .models import FREE_COLOR, LINE_COLORS, ShippingLine, VesselCall, berth_span, get_day_owners, get_quay, line_days
 from .scheduler import working_interval
 
 DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
@@ -204,8 +204,10 @@ def _draw_page(c, page_start, page_days, calls, quay, now, page_no, page_count, 
                                 f"{len(bollards)} bollards   ·   un navire à la fois")
     # Légende des fenêtres
     lx = M
+    owners = get_day_owners()
+    ldays = line_days(owners)
     for code, label in ShippingLine.choices:
-        days = ", ".join(DAY_SHORT[d] for d in PRIORITY_DAYS[code])
+        days = ", ".join(DAY_SHORT[d] for d in ldays[code]) or "aucun jour"
         c.setFillColor(HexColor(LINE_COLORS[code]))
         c.roundRect(lx, H - M - 54, 10, 10, 2, stroke=0, fill=1)
         c.setFillColor(INK)
@@ -223,8 +225,8 @@ def _draw_page(c, page_start, page_days, calls, quay, now, page_no, page_count, 
     # ── Bandes des jours (fenêtres prioritaires) + axe des dates
     for i in range(page_days):
         d = page_start + timedelta(days=i)
-        owner = DAY_OWNER[d.weekday()]
-        col = HexColor(LINE_COLORS[owner])
+        owner = owners.get(d.weekday())
+        col = HexColor(LINE_COLORS.get(owner, FREE_COLOR))
         ytop, ybot = top - i * 24 * h_pt, top - (i + 1) * 24 * h_pt
         c.saveState()
         c.setFillColor(col)
@@ -238,7 +240,7 @@ def _draw_page(c, page_start, page_days, calls, quay, now, page_no, page_count, 
         c.drawString(M + 8, ytop - 13, f"{DAY_SHORT[d.weekday()]} {d:%d/%m}")
         c.setFillColor(col)
         c.setFont("Helvetica-Bold", 8)
-        c.drawString(M + 8, ytop - 24, f"Fenêtre {owner}")
+        c.drawString(M + 8, ytop - 24, f"Fenêtre {owner}" if owner else "Jour libre")
         # Heures
         step = 2 if h_pt * 2 >= 10 else 3 if h_pt * 3 >= 10 else 6
         c.setFont("Helvetica", 6.5)
@@ -307,7 +309,7 @@ def _draw_page(c, page_start, page_days, calls, quay, now, page_no, page_count, 
 
     # ── Navires
     for call in calls:
-        start, end = call.planned_start or call.eta, call.planned_end or call.etd
+        start, end = call.planned_start or call.berthing_request, call.planned_end or call.etd
         if call.status == S.WORKING:
             start, end = working_interval(call, now)
         if end <= t0 or start >= t1:
@@ -341,6 +343,14 @@ def _draw_page(c, page_start, page_days, calls, quay, now, page_no, page_count, 
                 c.setFont("Helvetica", 6)
                 info = f"{call.line} · {_num(call.vessel.loa)} m" + (f" · TE {_num(call.draft)} m" if call.draft else "")
                 c.drawString(bx + bw * 0.13, hull_y - 8, _fit(c, info, "Helvetica", 6, bw * 0.68))
+            if ship_h < 30 and ship_h >= 7 and bw > 50:
+                # Escale courte : nom et heures écrits dans la silhouette
+                fs = max(5, min(7, ship_h * 0.45))
+                c.setFillColor(white)
+                c.setFont("Helvetica-Bold", fs)
+                c.drawString(bx + bw * 0.1, ys - ship_h * 0.62 - fs * 0.35,
+                             _fit(c, f"{call.vessel.name}  {call.line} · {_local(start):%H:%M} – {_local(end):%H:%M}",
+                                  "Helvetica-Bold", fs, bw * 0.75))
             text_top = ys - ship_h - 3
             if bh - ship_h > 8:
                 c.setStrokeColor(HexColor(color))
@@ -361,11 +371,16 @@ def _draw_page(c, page_start, page_days, calls, quay, now, page_no, page_count, 
         if b_from and b_to:
             lines.append(("Helvetica", f"Bollards {b_from.name} – {b_to.name} · "
                                        f"{_num(float(quay.start_m) + pos_from)}–{_num(float(quay.start_m) + pos_to)} m"))
+        if call.actual_berthing:
+            real = f"ATB {_local(call.actual_berthing):%d/%m %H:%M}"
+            if call.actual_departure:
+                real += f" · ATD {_local(call.actual_departure):%d/%m %H:%M}"
+            lines.append(("Helvetica", real))
         if call.status == S.WORKING:
             lines.append(("Helvetica-Bold", "EN OPÉRATION"))
         elif call.shift_reason:
-            delay = (start - call.eta).total_seconds() / 3600
-            lines.append(("Helvetica-Bold", f"Décalé +{delay:.0f} h (ETA demandé {_local(call.eta):%d/%m %H:%M})"))
+            delay = (start - call.berthing_request).total_seconds() / 3600
+            lines.append(("Helvetica-Bold", f"Décalé +{delay:.0f} h (ETB demandé {_local(call.berthing_request):%d/%m %H:%M})"))
             lines.append(("Helvetica-Oblique", call.shift_reason))
         elif call.is_priority and call.status == S.PLANNED:
             lines.append(("Helvetica-Bold", f"Prioritaire {call.line}"))

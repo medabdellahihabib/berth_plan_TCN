@@ -1,17 +1,34 @@
+"""
+Moteur de planification du berth plan TCN.
 
+Règles :
+1. Chaque jour peut appartenir à une ligne (fenêtre prioritaire), paramétrable dans
+   Paramétrage (par défaut MAE lun/sam · ARK mar · CMA mer/dim · HLC jeu/ven).
+   Un jour sans ligne est libre : premier arrivé, premier servi.
+2. Un navire dont l'ETA tombe dans la fenêtre de SA ligne est prioritaire :
+   il est placé en premier à son ETB (accostage demandé, ou ETA à défaut). Un navire d'une autre ligne qui
+   chevauche est décalé après l'ETD du navire prioritaire, même s'il a
+   été saisi avant.
+3. Si la ligne prioritaire ne déclare aucun navire (ou si son navire
+   n'est pas arrivé avant la fin de sa journée), le créneau est libre :
+   le navire suivant accoste normalement (premier arrivé, premier servi).
+4. Un navire en opération (WORKING) bloque le quai : aucune saisie
+   ne peut chevaucher sa période d'opération.
+"""
 from datetime import datetime, time, timedelta
 
 from django.db import transaction
 from django.utils import timezone
 
-from .models import DAY_OWNER, VesselCall
+from .models import VesselCall, get_day_owners
 
 ONE_MINUTE = timedelta(minutes=1)
 
 
-def window_owner(dt):
-    """Ligne propriétaire du jour de `dt` (heure locale du terminal)."""
-    return DAY_OWNER[timezone.localtime(dt).weekday()]
+def window_owner(dt, owners=None):
+    """Ligne propriétaire du jour de `dt` (heure locale du terminal), None si jour libre."""
+    owners = owners if owners is not None else get_day_owners()
+    return owners.get(timezone.localtime(dt).weekday())
 
 
 def day_bounds(dt):
@@ -20,9 +37,9 @@ def day_bounds(dt):
     return start, start + timedelta(days=1)
 
 
-def is_priority_call(call, now):
+def is_priority_call(call, now, owners=None):
     """Prioritaire si l'ETA est dans la fenêtre de sa ligne et que la journée n'est pas finie."""
-    if window_owner(call.eta) != call.line:
+    if window_owner(call.eta, owners) != call.line:
         return False
     _, window_end = day_bounds(call.eta)
     return now < window_end
@@ -40,13 +57,13 @@ def working_interval(call, now=None):
     """Période où le quai est occupé par le navire en opération.
     S'il dépasse son ETD, le quai reste occupé jusqu'à la fin réelle."""
     now = now or timezone.now()
-    start = call.actual_berthing or call.planned_start or call.eta
+    start = call.actual_berthing or call.planned_start or call.berthing_request
     end = max(call.planned_end or call.etd, now)
     return start, end
 
 
 def find_working_conflict(eta, etd, exclude_pk=None):
-    """Retourne (navire, début, fin) si [eta, etd] chevauche le navire en opération."""
+    """Retourne (navire, début, fin) si [eta, etd] (ou [etb, etd]) chevauche le navire en opération."""
     working = get_working_call()
     if not working or working.pk == exclude_pk:
         return None
@@ -69,10 +86,10 @@ def _first_fit(earliest, duration, placed):
 
 
 def _reason(call, start, blocker):
-    if start <= call.eta + ONE_MINUTE:
+    if start <= call.berthing_request + ONE_MINUTE:
         return ""
     if blocker is None:
-        return "ETA dépassé : replanifié à partir de maintenant"
+        return "ETB dépassé : replanifié à partir de maintenant"
     name = blocker.vessel.name
     if blocker.status == VesselCall.Status.WORKING:
         return f"Quai occupé par {name} (en opération)"
@@ -97,15 +114,16 @@ def recompute_plan(now=None):
         .select_related("vessel")
         .filter(status=VesselCall.Status.PLANNED)
     )
+    owners = get_day_owners()
     for call in pending:
-        call.is_priority = is_priority_call(call, now)
+        call.is_priority = is_priority_call(call, now, owners)
 
-    # Prioritaires d'abord, puis premier arrivé (ETA) / premier saisi
-    ordered = sorted(pending, key=lambda c: (not c.is_priority, c.eta, c.created_at))
+    # Prioritaires d'abord, puis premier à accoster (ETB) / premier saisi
+    ordered = sorted(pending, key=lambda c: (not c.is_priority, c.berthing_request, c.created_at))
 
     for call in ordered:
-        duration = call.etd - call.eta
-        earliest = max(call.eta, now)
+        duration = max(call.etd - call.berthing_request, timedelta(hours=1))
+        earliest = max(call.berthing_request, now)
         start, blocker = _first_fit(earliest, duration, placed)
         call.planned_start = start
         call.planned_end = start + duration
